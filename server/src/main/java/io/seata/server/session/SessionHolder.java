@@ -96,11 +96,9 @@ public class SessionHolder {
             ROOT_SESSION_MANAGER = EnhancedServiceLoader.load(SessionManager.class, StoreMode.DB.name());
             // async.commit.data
             ASYNC_COMMITTING_SESSION_MANAGER = EnhancedServiceLoader.load(SessionManager.class, StoreMode.DB.name(),
-                    new Object[]{ASYNC_COMMITTING_SESSION_MANAGER_NAME});
-            // retry.commit.data
+                new Object[] {ASYNC_COMMITTING_SESSION_MANAGER_NAME});
             RETRY_COMMITTING_SESSION_MANAGER = EnhancedServiceLoader.load(SessionManager.class, StoreMode.DB.name(),
-                    new Object[]{RETRY_COMMITTING_SESSION_MANAGER_NAME});
-            // retry.rollback.data
+                new Object[] {RETRY_COMMITTING_SESSION_MANAGER_NAME});
             RETRY_ROLLBACKING_SESSION_MANAGER = EnhancedServiceLoader.load(SessionManager.class, StoreMode.DB.name(),
                     new Object[]{RETRY_ROLLBACKING_SESSION_MANAGER_NAME});
         } else if (StoreMode.FILE.equals(storeMode)) {
@@ -117,10 +115,8 @@ public class SessionHolder {
 
             ASYNC_COMMITTING_SESSION_MANAGER = EnhancedServiceLoader.load(SessionManager.class, DEFAULT,
                     new Object[]{ASYNC_COMMITTING_SESSION_MANAGER_NAME});
-
             RETRY_COMMITTING_SESSION_MANAGER = EnhancedServiceLoader.load(SessionManager.class, DEFAULT,
                     new Object[]{RETRY_COMMITTING_SESSION_MANAGER_NAME});
-
             RETRY_ROLLBACKING_SESSION_MANAGER = EnhancedServiceLoader.load(SessionManager.class, DEFAULT,
                     new Object[]{RETRY_ROLLBACKING_SESSION_MANAGER_NAME});
         } else {

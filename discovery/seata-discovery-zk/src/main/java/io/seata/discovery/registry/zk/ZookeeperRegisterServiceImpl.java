@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static io.seata.common.Constants.IP_PORT_SPLIT_CHAR;
 
@@ -153,7 +154,7 @@ public class ZookeeperRegisterServiceImpl implements RegistryService<IZkChildLis
             getClientInstance().createPersistent(path);
         }
         getClientInstance().subscribeChildChanges(path, listener);
-        LISTENER_SERVICE_MAP.putIfAbsent(cluster, new ArrayList<>());
+        LISTENER_SERVICE_MAP.putIfAbsent(cluster, new CopyOnWriteArrayList<>());
         LISTENER_SERVICE_MAP.get(cluster).add(listener);
     }
 
@@ -232,8 +233,8 @@ public class ZookeeperRegisterServiceImpl implements RegistryService<IZkChildLis
                     // registry.zk.session.timeout
                     // registry.zk.connect.timeout
                     zkClient = buildZkClient(FILE_CONFIG.getConfig(FILE_CONFIG_KEY_PREFIX + SERVER_ADDR_KEY),
-                            FILE_CONFIG.getInt(FILE_CONFIG_KEY_PREFIX + SESSION_TIME_OUT_KEY),
-                            FILE_CONFIG.getInt(FILE_CONFIG_KEY_PREFIX + CONNECT_TIME_OUT_KEY));
+                        FILE_CONFIG.getInt(FILE_CONFIG_KEY_PREFIX + SESSION_TIME_OUT_KEY),
+                        FILE_CONFIG.getInt(FILE_CONFIG_KEY_PREFIX + CONNECT_TIME_OUT_KEY));
                 }
             }
         }

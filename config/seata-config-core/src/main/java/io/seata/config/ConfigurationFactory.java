@@ -34,7 +34,7 @@ public final class ConfigurationFactory {
     private static final String REGISTRY_CONF_PREFIX = "registry";
     private static final String REGISTRY_CONF_SUFFIX = ".conf";
     private static final String ENV_SYSTEM_KEY = "SEATA_CONFIG_ENV";
-    private static final String ENV_PROPERTY_KEY = "env";
+    private static final String ENV_PROPERTY_KEY = "seataConfigEnv";
     private static final String DEFAULT_ENV_VALUE = "default";
     /**
      * The constant FILE_INSTANCE.

@@ -15,15 +15,6 @@
  */
 package io.seata.core.store.db;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.sql.DataSource;
-
 import io.seata.common.exception.StoreException;
 import io.seata.common.executor.Initialize;
 import io.seata.common.loader.LoadLevel;
@@ -33,6 +24,14 @@ import io.seata.config.ConfigurationFactory;
 import io.seata.core.constants.ConfigurationKeys;
 import io.seata.core.store.LockDO;
 import io.seata.core.store.LockStore;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * The type Data base lock store.
@@ -86,9 +85,7 @@ public class LockStoreDataBaseDAO implements LockStore, Initialize {
 
     @Override
     public boolean acquireLock(LockDO lockDO) {
-        List<LockDO> locks = new ArrayList<>();
-        locks.add(lockDO);
-        return acquireLock(locks);
+        return acquireLock(Collections.singletonList(lockDO));
     }
 
     @Override
@@ -172,9 +169,7 @@ public class LockStoreDataBaseDAO implements LockStore, Initialize {
 
     @Override
     public boolean unLock(LockDO lockDO) {
-        List<LockDO> locks = new ArrayList<>();
-        locks.add(lockDO);
-        return unLock(locks);
+        return unLock(Collections.singletonList(lockDO));
     }
 
     @Override
@@ -251,7 +246,6 @@ public class LockStoreDataBaseDAO implements LockStore, Initialize {
      */
     protected boolean doAcquireLock(Connection conn, LockDO lockDO) {
         PreparedStatement ps = null;
-        ResultSet rs = null;
         try {
             //insert
             String insertLockSQL = LockStoreSqls.getInsertLockSQL(lockTable, dbType);
@@ -267,12 +261,6 @@ public class LockStoreDataBaseDAO implements LockStore, Initialize {
         } catch (SQLException e) {
             throw new StoreException(e);
         } finally {
-            if (rs != null) {
-                try {
-                    rs.close();
-                } catch (SQLException e) {
-                }
-            }
             if (ps != null) {
                 try {
                     ps.close();

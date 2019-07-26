@@ -86,4 +86,5 @@ public class StoreException extends FrameworkException {
     public StoreException(Throwable th, String msg) {
         super(th, msg);
     }
+
 }

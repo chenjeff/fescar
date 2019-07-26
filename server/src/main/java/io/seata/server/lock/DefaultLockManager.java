@@ -54,9 +54,10 @@ public class DefaultLockManager extends AbstractLockManager {
     public boolean releaseLock(BranchSession branchSession) throws TransactionException {
         List<RowLock> locks = collectRowLocks(branchSession);
         if (CollectionUtils.isEmpty(locks)) {
-            //no lock
+            // no lock
             return true;
         }
+
         try {
             return getLocker(branchSession).releaseLock(locks);
         } catch (Exception t) {

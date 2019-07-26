@@ -249,7 +249,7 @@ public class GlobalTransactionDO {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return StringUtils.toString(this);
     }
 

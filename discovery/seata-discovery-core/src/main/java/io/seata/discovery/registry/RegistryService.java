@@ -85,7 +85,9 @@ public interface RegistryService<T> {
 
     /**
      * Close.
+     *
      * @throws Exception
      */
     void close() throws Exception;
+
 }

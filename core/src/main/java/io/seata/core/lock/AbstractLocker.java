@@ -52,6 +52,7 @@ public abstract class AbstractLocker implements Locker {
         if (CollectionUtils.isEmpty(locks)) {
             return lockDOs;
         }
+
         for (RowLock rowLock : locks) {
             LockDO lockDO = new LockDO();
             lockDO.setBranchId(rowLock.getBranchId());
@@ -63,6 +64,7 @@ public abstract class AbstractLocker implements Locker {
             lockDO.setTableName(rowLock.getTableName());
             lockDOs.add(lockDO);
         }
+
         return lockDOs;
     }
 
@@ -75,12 +77,15 @@ public abstract class AbstractLocker implements Locker {
      * @return the string
      */
     protected String getRowKey(String resourceId, String tableName, String pk) {
-        return new StringBuilder().append(resourceId).append(LOCK_SPLIT).append(tableName).append(LOCK_SPLIT).append(pk)
-            .toString();
+        return new StringBuilder()
+                .append(resourceId).append(LOCK_SPLIT)
+                .append(tableName).append(LOCK_SPLIT)
+                .append(pk).toString();
     }
 
     @Override
     public void cleanAllLocks() {
 
     }
+
 }

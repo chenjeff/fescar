@@ -32,6 +32,7 @@ import java.util.Objects;
  * @date 2019 /2/1
  */
 public class RegistryFactory {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(RegistryFactory.class);
 
     /**
@@ -41,10 +42,11 @@ public class RegistryFactory {
      */
     public static RegistryService getInstance() {
         RegistryType registryType;
+        // registry.type    [File, ZK, Redis, Nacos, Eureka, Consul, Etcd3, Sofa]
         String registryTypeName = ConfigurationFactory.CURRENT_FILE_INSTANCE.getConfig(
-            ConfigurationKeys.FILE_ROOT_REGISTRY + ConfigurationKeys.FILE_CONFIG_SPLIT_CHAR
-                + ConfigurationKeys.FILE_ROOT_TYPE);
+                ConfigurationKeys.FILE_ROOT_REGISTRY + ConfigurationKeys.FILE_CONFIG_SPLIT_CHAR + ConfigurationKeys.FILE_ROOT_TYPE);
         try {
+            // File, ZK, Redis, Nacos, Eureka, Consul, Etcd3, Sofa
             registryType = RegistryType.getType(registryTypeName);
         } catch (Exception exx) {
             throw new NotSupportYetException("not support registry type: " + registryTypeName);
@@ -55,4 +57,5 @@ public class RegistryFactory {
             return EnhancedServiceLoader.load(RegistryProvider.class, Objects.requireNonNull(registryType).name()).provide();
         }
     }
+
 }

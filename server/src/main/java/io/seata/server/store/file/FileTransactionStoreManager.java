@@ -23,6 +23,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -56,8 +57,8 @@ import org.slf4j.LoggerFactory;
  * @author jimin.jm @alibaba-inc.com
  */
 @LoadLevel(name = "file")
-public class FileTransactionStoreManager extends AbstractTransactionStoreManager
-    implements TransactionStoreManager, ReloadableStore {
+public class FileTransactionStoreManager extends AbstractTransactionStoreManager implements TransactionStoreManager, ReloadableStore {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(FileTransactionStoreManager.class);
 
     private static final int MAX_THREAD_WRITE = 1;
@@ -82,12 +83,21 @@ public class FileTransactionStoreManager extends AbstractTransactionStoreManager
 
     private static final int MAX_WAIT_TIME_MILLS = 2 * 1000;
 
+    /**
+     * 每 2s刷盘一次
+     */
     private static final int MAX_FLUSH_TIME_MILLS = 2 * 1000;
 
     private static final int MAX_FLUSH_NUM = 10;
 
+    /**
+     * 数量
+     */
     private static int PER_FILE_BLOCK_SIZE = 65535 * 8;
 
+    /**
+     * 30min
+     */
     private static long MAX_TRX_TIMEOUT_MILLS = 30 * 60 * 1000;
 
     private static volatile long trxStartTimeMills = System.currentTimeMillis();
@@ -114,10 +124,16 @@ public class FileTransactionStoreManager extends AbstractTransactionStoreManager
 
     private volatile long lastModifiedTime;
 
+    /**
+     * default: 16kb [1024 * 16 = 16384]
+     */
     private static final int MAX_WRITE_BUFFER_SIZE = StoreConfig.getFileWriteBufferCacheSize();
 
     private final ByteBuffer writeBuffer = ByteBuffer.allocateDirect(MAX_WRITE_BUFFER_SIZE);
 
+    /**
+     * default: async
+     */
     private static final FlushDiskMode FLUSH_DISK_MODE = StoreConfig.getFlushDiskMode();
 
     private static final int MAX_WAIT_FOR_FLUSH_TIME_MILLS = 2 * 1000;
@@ -127,36 +143,47 @@ public class FileTransactionStoreManager extends AbstractTransactionStoreManager
     /**
      * Instantiates a new File transaction store manager.
      *
-     * @param fullFileName   the dir path
-     * @param sessionManager the session manager
+     * @param fullFileName   the dir path   [default: sessionStore/root.data]
+     * @param sessionManager the session manager    [default: FileBasedSessionManager]
      * @throws IOException the io exception
      */
     public FileTransactionStoreManager(String fullFileName, SessionManager sessionManager) throws IOException {
         initFile(fullFileName);
-        fileWriteExecutor = new ThreadPoolExecutor(MAX_THREAD_WRITE, MAX_THREAD_WRITE, Integer.MAX_VALUE,
-            TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<Runnable>(),
-            new NamedThreadFactory("fileTransactionStore", MAX_THREAD_WRITE, true));
+        fileWriteExecutor = new ThreadPoolExecutor(MAX_THREAD_WRITE,
+                MAX_THREAD_WRITE,
+                Integer.MAX_VALUE,
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>(),
+                new NamedThreadFactory("fileTransactionStore", MAX_THREAD_WRITE, true));
+
         writeDataFileRunnable = new WriteDataFileRunnable();
         fileWriteExecutor.submit(writeDataFileRunnable);
         this.sessionManager = sessionManager;
     }
 
+    /**
+     * @param fullFileName [default: sessionStore/root.data]
+     * @throws IOException
+     */
     private void initFile(String fullFileName) throws IOException {
+        // [default: sessionStore/root.data]
         this.currFullFileName = fullFileName;
+        // [default: sessionStore/root.data.1]
         this.hisFullFileName = fullFileName + HIS_DATA_FILENAME_POSTFIX;
         try {
             currDataFile = new File(currFullFileName);
             if (!currDataFile.exists()) {
-                //create parent dir first
+                // create parent dir first
                 if (currDataFile.getParentFile() != null && !currDataFile.getParentFile().exists()) {
                     currDataFile.getParentFile().mkdirs();
                 }
+
                 currDataFile.createNewFile();
                 trxStartTimeMills = System.currentTimeMillis();
             } else {
                 trxStartTimeMills = currDataFile.lastModified();
             }
+
             lastModifiedTime = System.currentTimeMillis();
             currRaf = new RandomAccessFile(currDataFile, "rw");
             currRaf.seek(currDataFile.length());
@@ -175,10 +202,14 @@ public class FileTransactionStoreManager extends AbstractTransactionStoreManager
             if (!writeDataFile(new TransactionWriteStore(session, logOperation).encode())) {
                 return false;
             }
+
             lastModifiedTime = System.currentTimeMillis();
             curFileTrxNum = FILE_TRX_NUM.incrementAndGet();
-            if (curFileTrxNum % PER_FILE_BLOCK_SIZE == 0 &&
-                (System.currentTimeMillis() - trxStartTimeMills) > MAX_TRX_TIMEOUT_MILLS) {
+            // 65535 * 8 = 524_280
+            if (curFileTrxNum % PER_FILE_BLOCK_SIZE == 0
+                    // > 30 * 60 * 1000 ms [30min]
+                    && (System.currentTimeMillis() - trxStartTimeMills) > MAX_TRX_TIMEOUT_MILLS) {
+                // 条件是否有点苛刻
                 return saveHistory();
             }
         } catch (Exception exx) {
@@ -187,12 +218,12 @@ public class FileTransactionStoreManager extends AbstractTransactionStoreManager
         } finally {
             writeSessionLock.unlock();
         }
+
         flushDisk(curFileTrxNum, currFileChannel);
         return true;
     }
 
     private void flushDisk(long curFileNum, FileChannel currFileChannel) {
-
         if (FLUSH_DISK_MODE == FlushDiskMode.SYNC_MODEL) {
             SyncFlushRequest syncFlushRequest = new SyncFlushRequest(curFileNum, currFileChannel);
             writeDataFileRunnable.putRequest(syncFlushRequest);
@@ -220,15 +251,18 @@ public class FileTransactionStoreManager extends AbstractTransactionStoreManager
         } finally {
             initFile(currFullFileName);
         }
+
         return result;
     }
 
     private boolean findTimeoutAndSave() throws IOException {
-        List<GlobalSession> globalSessionsOverMaxTimeout =
-            sessionManager.findGlobalSessions(new SessionCondition(MAX_TRX_TIMEOUT_MILLS));
+        // map 内存获取
+        List<GlobalSession> globalSessionsOverMaxTimeout = sessionManager.findGlobalSessions(new SessionCondition(MAX_TRX_TIMEOUT_MILLS));
         if (CollectionUtils.isEmpty(globalSessionsOverMaxTimeout)) {
             return true;
         }
+
+        // List<byte[]> listBytes = new LinkedList<>(); // 是否更好
         List<byte[]> listBytes = new ArrayList<>();
         int totalSize = 0;
         // 1. find all data and merge
@@ -237,27 +271,30 @@ public class FileTransactionStoreManager extends AbstractTransactionStoreManager
             byte[] data = globalWriteStore.encode();
             listBytes.add(data);
             totalSize += data.length + INT_BYTE_SIZE;
+
             List<BranchSession> branchSessIonsOverMaXTimeout = globalSession.getSortedBranches();
             if (null != branchSessIonsOverMaXTimeout) {
                 for (BranchSession branchSession : branchSessIonsOverMaXTimeout) {
-                    TransactionWriteStore branchWriteStore =
-                        new TransactionWriteStore(branchSession, LogOperation.BRANCH_ADD);
+                    TransactionWriteStore branchWriteStore = new TransactionWriteStore(branchSession, LogOperation.BRANCH_ADD);
                     data = branchWriteStore.encode();
                     listBytes.add(data);
                     totalSize += data.length + INT_BYTE_SIZE;
                 }
             }
         }
+
         // 2. batch write
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect(totalSize);
         for (byte[] bytes : listBytes) {
             byteBuffer.putInt(bytes.length);
             byteBuffer.put(bytes);
         }
+
         if (writeDataFileByBuffer(byteBuffer)) {
             currFileChannel.force(false);
             return true;
         }
+
         return false;
     }
 
@@ -288,18 +325,20 @@ public class FileTransactionStoreManager extends AbstractTransactionStoreManager
                 fileWriteExecutor.shutdownNow();
             }
         }
+
         try {
             currFileChannel.force(true);
         } catch (IOException e) {
             LOGGER.error("filechannel force error", e);
         }
+
         closeFile(currRaf);
     }
 
     @Override
     public List<TransactionWriteStore> readWriteStore(int readSize, boolean isHistory) {
-        File file = null;
-        long currentOffset = 0;
+        File file;
+        long currentOffset;
         if (isHistory) {
             file = new File(hisFullFileName);
             currentOffset = recoverHisOffset;
@@ -307,9 +346,11 @@ public class FileTransactionStoreManager extends AbstractTransactionStoreManager
             file = new File(currFullFileName);
             currentOffset = recoverCurrOffset;
         }
+
         if (file.exists()) {
             return parseDataFile(file, readSize, currentOffset);
         }
+
         return null;
     }
 
@@ -325,14 +366,15 @@ public class FileTransactionStoreManager extends AbstractTransactionStoreManager
             file = new File(currFullFileName);
             currentOffset = recoverCurrOffset;
         }
+
         try {
             raf = new RandomAccessFile(file, "r");
             return currentOffset < raf.length();
-
         } catch (IOException ignore) {
         } finally {
             closeFile(raf);
         }
+
         return false;
     }
 
@@ -345,23 +387,29 @@ public class FileTransactionStoreManager extends AbstractTransactionStoreManager
             raf.seek(currentOffset);
             fileChannel = raf.getChannel();
             fileChannel.position(currentOffset);
+
             long size = raf.length();
             ByteBuffer buffSize = ByteBuffer.allocate(MARK_SIZE);
             while (fileChannel.position() < size) {
                 try {
                     buffSize.clear();
+                    // read body size
                     int avilReadSize = fileChannel.read(buffSize);
                     if (avilReadSize != MARK_SIZE) {
                         break;
                     }
+
                     buffSize.flip();
                     int bodySize = buffSize.getInt();
                     byte[] byBody = new byte[bodySize];
                     ByteBuffer buffBody = ByteBuffer.wrap(byBody);
+
+                    // read body
                     avilReadSize = fileChannel.read(buffBody);
                     if (avilReadSize != bodySize) {
                         break;
                     }
+
                     TransactionWriteStore writeStore = new TransactionWriteStore();
                     writeStore.decode(byBody);
                     transactionWriteStores.add(writeStore);
@@ -373,6 +421,7 @@ public class FileTransactionStoreManager extends AbstractTransactionStoreManager
                     break;
                 }
             }
+
             return transactionWriteStores;
         } catch (IOException exx) {
             LOGGER.error("parse data file error:" + exx.getMessage() + ",file:" + file.getName());
@@ -391,11 +440,9 @@ public class FileTransactionStoreManager extends AbstractTransactionStoreManager
                 LOGGER.error("file close error," + exx.getMessage());
             }
         }
-
     }
 
     private boolean isHisFile(File file) {
-
         return file.getName().endsWith(HIS_DATA_FILENAME_POSTFIX);
     }
 
@@ -414,26 +461,31 @@ public class FileTransactionStoreManager extends AbstractTransactionStoreManager
         if (bs == null) {
             return false;
         }
-        ByteBuffer byteBuffer = null;
 
+        ByteBuffer byteBuffer;
+
+        // default: 16kb [1024 * 16 = 16384]
         if (bs.length > MAX_WRITE_BUFFER_SIZE) {
-            //allocateNew
+            // allocateNew
             byteBuffer = ByteBuffer.allocateDirect(bs.length);
         } else {
             byteBuffer = writeBuffer;
-            //recycle
+            // recycle
             byteBuffer.clear();
         }
 
         byteBuffer.putInt(bs.length);
         byteBuffer.put(bs);
+
         return writeDataFileByBuffer(byteBuffer);
     }
 
     private boolean writeDataFileByBuffer(ByteBuffer byteBuffer) {
+        // 写模式 -> 读模式
         byteBuffer.flip();
         for (int retry = 0; retry < MAX_WRITE_RETRY; retry++) {
             try {
+                // 剩余
                 while (byteBuffer.hasRemaining()) {
                     currFileChannel.write(byteBuffer);
                 }
@@ -442,6 +494,7 @@ public class FileTransactionStoreManager extends AbstractTransactionStoreManager
                 LOGGER.error("write data file error:" + exx.getMessage());
             }
         }
+
         LOGGER.error("write dataFile failed,retry more than :" + MAX_WRITE_RETRY);
         return false;
     }
@@ -451,6 +504,7 @@ public class FileTransactionStoreManager extends AbstractTransactionStoreManager
     }
 
     abstract class AbstractFlushRequest implements StoreRequest {
+
         private final long curFileTrxNum;
 
         private final FileChannel curFileChannel;
@@ -467,6 +521,7 @@ public class FileTransactionStoreManager extends AbstractTransactionStoreManager
         public FileChannel getCurFileChannel() {
             return curFileChannel;
         }
+
     }
 
     class SyncFlushRequest extends AbstractFlushRequest {
@@ -539,6 +594,7 @@ public class FileTransactionStoreManager extends AbstractTransactionStoreManager
                     LOGGER.error("write file error: {}", exx.getMessage(), exx);
                 }
             }
+
             handleRestRequest();
         }
 
@@ -556,12 +612,13 @@ public class FileTransactionStoreManager extends AbstractTransactionStoreManager
             if (storeRequest == null) {
                 flushOnCondition(currFileChannel);
             }
+
             if (storeRequest instanceof SyncFlushRequest) {
-                syncFlush((SyncFlushRequest)storeRequest);
+                syncFlush((SyncFlushRequest) storeRequest);
             } else if (storeRequest instanceof AsyncFlushRequest) {
-                async((AsyncFlushRequest)storeRequest);
+                async((AsyncFlushRequest) storeRequest);
             } else if (storeRequest instanceof CloseFileRequest) {
-                closeAndFlush((CloseFileRequest)storeRequest);
+                closeAndFlush((CloseFileRequest) storeRequest);
             }
         }
 
@@ -584,6 +641,7 @@ public class FileTransactionStoreManager extends AbstractTransactionStoreManager
                 flush(req.getCurFileChannel());
                 FILE_FLUSH_NUM.addAndGet(diff);
             }
+
             // notify
             req.wakeupCustomer();
         }
@@ -592,12 +650,13 @@ public class FileTransactionStoreManager extends AbstractTransactionStoreManager
             if (FLUSH_DISK_MODE == FlushDiskMode.SYNC_MODEL) {
                 return;
             }
+
             long diff = FILE_TRX_NUM.get() - FILE_FLUSH_NUM.get();
             if (diff == 0) {
                 return;
             }
-            if (diff % MAX_FLUSH_NUM == 0 ||
-                System.currentTimeMillis() - lastModifiedTime > MAX_FLUSH_TIME_MILLS) {
+
+            if (diff % MAX_FLUSH_NUM == 0 || System.currentTimeMillis() - lastModifiedTime > MAX_FLUSH_TIME_MILLS) {
                 flush(fileChannel);
                 FILE_FLUSH_NUM.addAndGet(diff);
             }
@@ -611,4 +670,5 @@ public class FileTransactionStoreManager extends AbstractTransactionStoreManager
             }
         }
     }
+
 }

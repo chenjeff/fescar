@@ -43,4 +43,5 @@ public class CoreFactory {
     public static void set(Core core) {
         SingletonHolder.INSTANCE = core;
     }
+    
 }

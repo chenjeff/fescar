@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
  */
 @Sharable
 public class RpcServer extends AbstractRpcRemotingServer implements ServerMessageSender {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(RpcServer.class);
 
     /**
@@ -71,8 +72,7 @@ public class RpcServer extends AbstractRpcRemotingServer implements ServerMessag
      * @param transactionMessageHandler the transactionMessageHandler
      * @param checkAuthHandler          the check auth handler
      */
-    public void setHandler(TransactionMessageHandler transactionMessageHandler,
-                           RegisterCheckAuthHandler checkAuthHandler) {
+    public void setHandler(TransactionMessageHandler transactionMessageHandler, RegisterCheckAuthHandler checkAuthHandler) {
         this.transactionMessageHandler = transactionMessageHandler;
         this.checkAuthHandler = checkAuthHandler;
     }
@@ -121,20 +121,26 @@ public class RpcServer extends AbstractRpcRemotingServer implements ServerMessag
     @Override
     public void init() {
         super.init();
+
         setChannelHandlers(RpcServer.this);
-        DefaultServerMessageListenerImpl defaultServerMessageListenerImpl = new DefaultServerMessageListenerImpl(
-            transactionMessageHandler);
+        DefaultServerMessageListenerImpl defaultServerMessageListenerImpl = new DefaultServerMessageListenerImpl(transactionMessageHandler);
         defaultServerMessageListenerImpl.init();
         defaultServerMessageListenerImpl.setServerMessageSender(this);
         this.setServerMessageListener(defaultServerMessageListenerImpl);
-        super.start();
 
+        super.start();
     }
 
+    /**
+     * 关闭
+     *
+     * @param ctx
+     */
     private void closeChannelHandlerContext(ChannelHandlerContext ctx) {
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("closeChannelHandlerContext channel:" + ctx.channel());
         }
+
         ctx.disconnect();
         ctx.close();
     }
@@ -150,7 +156,7 @@ public class RpcServer extends AbstractRpcRemotingServer implements ServerMessag
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
         if (evt instanceof IdleStateEvent) {
             debugLog("idle:" + evt);
-            IdleStateEvent idleStateEvent = (IdleStateEvent)evt;
+            IdleStateEvent idleStateEvent = (IdleStateEvent) evt;
             if (idleStateEvent.state() == IdleState.READER_IDLE) {
                 if (LOGGER.isInfoEnabled()) {
                     LOGGER.info("channel:" + ctx.channel() + " read idle.");
@@ -191,6 +197,7 @@ public class RpcServer extends AbstractRpcRemotingServer implements ServerMessag
         if (!(msg instanceof HeartbeatMessage)) {
             clientChannel = ChannelManager.getSameClientChannel(channel);
         }
+
         if (clientChannel != null) {
             super.sendResponse(msgId, clientChannel, msg);
         } else {
@@ -210,14 +217,14 @@ public class RpcServer extends AbstractRpcRemotingServer implements ServerMessag
      * @throws TimeoutException the timeout exception
      */
     @Override
-    public Object sendSyncRequest(String resourceId, String clientId, Object message,
-                                  long timeout) throws TimeoutException {
+    public Object sendSyncRequest(String resourceId, String clientId, Object message, long timeout) throws TimeoutException {
         Channel clientChannel = ChannelManager.getChannel(resourceId, clientId);
         if (clientChannel == null) {
-            throw new RuntimeException("rm client is not connected. dbkey:" + resourceId
-                + ",clientId:" + clientId);
+            throw new RuntimeException("rm client is not connected. dbkey:"
+                    + resourceId + ",clientId:" + clientId);
 
         }
+
         return sendAsyncRequestWithResponse(null, clientChannel, message, timeout);
     }
 
@@ -231,8 +238,7 @@ public class RpcServer extends AbstractRpcRemotingServer implements ServerMessag
      * @throws TimeoutException the timeout exception
      */
     @Override
-    public Object sendSyncRequest(String resourceId, String clientId, Object message)
-        throws TimeoutException {
+    public Object sendSyncRequest(String resourceId, String clientId, Object message) throws TimeoutException {
         return sendSyncRequest(resourceId, clientId, message, NettyServerConfig.getRpcRequestTimeout());
     }
 
@@ -246,8 +252,7 @@ public class RpcServer extends AbstractRpcRemotingServer implements ServerMessag
     @Override
     public void dispatch(long msgId, ChannelHandlerContext ctx, Object msg) {
         if (msg instanceof RegisterRMRequest) {
-            serverMessageListener.onRegRmMessage(msgId, ctx, (RegisterRMRequest)msg, this,
-                checkAuthHandler);
+            serverMessageListener.onRegRmMessage(msgId, ctx, (RegisterRMRequest) msg, this, checkAuthHandler);
         } else {
             if (ChannelManager.isRegistered(ctx.channel())) {
                 serverMessageListener.onTrxMessage(msgId, ctx, msg, this);
@@ -257,6 +262,7 @@ public class RpcServer extends AbstractRpcRemotingServer implements ServerMessag
                 } catch (Exception exx) {
                     LOGGER.error(exx.getMessage());
                 }
+
                 if (LOGGER.isInfoEnabled()) {
                     LOGGER.info(String.format("close a unhandled connection! [%s]", ctx.channel().toString()));
                 }
@@ -276,6 +282,7 @@ public class RpcServer extends AbstractRpcRemotingServer implements ServerMessag
         if (messageExecutor.isShutdown()) {
             return;
         }
+
         handleDisconnect(ctx);
         super.channelInactive(ctx);
     }
@@ -286,6 +293,7 @@ public class RpcServer extends AbstractRpcRemotingServer implements ServerMessag
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(ipAndPort + " to server channel inactive.");
         }
+
         if (null != rpcContext && null != rpcContext.getClientRole()) {
             rpcContext.release();
             if (LOGGER.isInfoEnabled()) {
@@ -308,20 +316,20 @@ public class RpcServer extends AbstractRpcRemotingServer implements ServerMessag
     @Override
     public void channelRead(final ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof RpcMessage) {
-            RpcMessage rpcMessage = (RpcMessage)msg;
+            RpcMessage rpcMessage = (RpcMessage) msg;
             debugLog("read:" + rpcMessage.getBody().toString());
             if (rpcMessage.getBody() instanceof RegisterTMRequest) {
-                RegisterTMRequest request
-                    = (RegisterTMRequest)rpcMessage
-                    .getBody();
+                RegisterTMRequest request = (RegisterTMRequest) rpcMessage.getBody();
                 serverMessageListener.onRegTmMessage(rpcMessage.getId(), ctx, request, this, checkAuthHandler);
                 return;
             }
+
             if (rpcMessage.getBody() == HeartbeatMessage.PING) {
                 serverMessageListener.onCheckMessage(rpcMessage.getId(), ctx, this);
                 return;
             }
         }
+
         super.channelRead(ctx, msg);
     }
 
@@ -337,7 +345,9 @@ public class RpcServer extends AbstractRpcRemotingServer implements ServerMessag
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("channel exx:" + cause.getMessage() + ",channel:" + ctx.channel());
         }
+
         ChannelManager.releaseRpcContext(ctx.channel());
         super.exceptionCaught(ctx, cause);
     }
+
 }

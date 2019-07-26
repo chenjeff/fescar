@@ -51,4 +51,5 @@ public interface ResourceManager extends ResourceManagerInbound, ResourceManager
      * @return The BranchType of ResourceManager.
      */
     BranchType getBranchType();
+
 }

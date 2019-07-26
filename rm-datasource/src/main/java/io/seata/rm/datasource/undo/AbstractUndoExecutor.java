@@ -50,7 +50,7 @@ public abstract class AbstractUndoExecutor {
 
     /**
      * template of check sql
-     * 
+     * <p>
      * TODO support multiple primary key
      */
     private static final String CHECK_SQL_TEMPLATE = "SELECT * FROM %s WHERE %s in (%s)";
@@ -102,7 +102,7 @@ public abstract class AbstractUndoExecutor {
         if (IS_UNDO_DATA_VALIDATION_ENABLE && !dataValidationAndGoOn(conn)) {
             return;
         }
-        
+
         try {
             String undoSQL = buildUndoSQL();
 
@@ -125,16 +125,13 @@ public abstract class AbstractUndoExecutor {
 
                 undoPST.executeUpdate();
             }
-
         } catch (Exception ex) {
             if (ex instanceof SQLException) {
                 throw (SQLException) ex;
             } else {
                 throw new SQLException(ex);
             }
-
         }
-
     }
 
     /**
@@ -145,13 +142,13 @@ public abstract class AbstractUndoExecutor {
      * @param pkValue    the pk value
      * @throws SQLException the sql exception
      */
-    protected void undoPrepare(PreparedStatement undoPST, ArrayList<Field> undoValues, Field pkValue)
-        throws SQLException {
+    protected void undoPrepare(PreparedStatement undoPST, ArrayList<Field> undoValues, Field pkValue) throws SQLException {
         int undoIndex = 0;
         for (Field undoValue : undoValues) {
             undoIndex++;
             undoPST.setObject(undoIndex, undoValue.getValue(), undoValue.getType());
         }
+
         // PK is at last one.
         // INSERT INTO a (x, y, z, pk) VALUES (?, ?, ?, ?)
         // UPDATE a SET x=?, y=?, z=? WHERE pk = ?
@@ -175,7 +172,7 @@ public abstract class AbstractUndoExecutor {
      * @throws SQLException the sql exception such as has dirty data
      */
     protected boolean dataValidationAndGoOn(Connection conn) throws SQLException {
-        
+
         TableRecords beforeRecords = sqlUndoLog.getBeforeImage();
         TableRecords afterRecords = sqlUndoLog.getAfterImage();
 
@@ -186,6 +183,7 @@ public abstract class AbstractUndoExecutor {
                 LOGGER.info("Stop rollback because there is no data change " +
                         "between the before data snapshot and the after data snapshot.");
             }
+
             // no need continue undo.
             return false;
         }
@@ -194,7 +192,7 @@ public abstract class AbstractUndoExecutor {
         TableRecords currentRecords = queryCurrentRecords(conn);
         // compare with current data and after image.
         if (!DataCompareUtils.isRecordsEquals(afterRecords, currentRecords)) {
-            
+
             // If current data is not equivalent to the after data, then compare the current data with the before 
             // data, too. No need continue to undo if current data is equivalent to the before data snapshot
             if (DataCompareUtils.isRecordsEquals(beforeRecords, currentRecords)) {
@@ -242,7 +240,7 @@ public abstract class AbstractUndoExecutor {
         // build check sql
         String checkSQL = String.format(CHECK_SQL_TEMPLATE, sqlUndoLog.getTableName(), pkName,
                 replace.substring(0, replace.length() - 1));
-        
+
         PreparedStatement statement = null;
         ResultSet checkSet = null;
         TableRecords currentRecords;

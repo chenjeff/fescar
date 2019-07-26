@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
 public class MessageCodecHandler extends ByteToMessageCodec<RpcMessage> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageCodecHandler.class);
-    private static short MAGIC = (short)0xdada;
+    private static short MAGIC = (short) 0xdada;
     private static int HEAD_LENGTH = 14;
     private static final int FLAG_REQUEST = 0x80;
     private static final int FLAG_ASYNC = 0x40;
@@ -63,18 +63,18 @@ public class MessageCodecHandler extends ByteToMessageCodec<RpcMessage> {
         MessageCodec msgCodec = null;
         ByteBuffer byteBuffer = ByteBuffer.allocate(128);
         if (msg.getBody() instanceof MessageCodec) {
-            msgCodec = (MessageCodec)msg.getBody();
+            msgCodec = (MessageCodec) msg.getBody();
         }
         byteBuffer.putShort(MAGIC);
         int flag = (msg.isAsync() ? FLAG_ASYNC : 0)
-            | (msg.isHeartbeat() ? FLAG_HEARTBEAT : 0)
-            | (msg.isRequest() ? FLAG_REQUEST : 0)
-            | (msgCodec != null ? FLAG_SEATA_CODEC : 0);
+                | (msg.isHeartbeat() ? FLAG_HEARTBEAT : 0)
+                | (msg.isRequest() ? FLAG_REQUEST : 0)
+                | (msgCodec != null ? FLAG_SEATA_CODEC : 0);
 
-        byteBuffer.putShort((short)flag);
+        byteBuffer.putShort((short) flag);
 
         if (msg.getBody() instanceof HeartbeatMessage) {
-            byteBuffer.putShort((short)0);
+            byteBuffer.putShort((short) 0);
             byteBuffer.putLong(msg.getId());
             byteBuffer.flip();
             out.writeBytes(byteBuffer);
@@ -94,7 +94,7 @@ public class MessageCodecHandler extends ByteToMessageCodec<RpcMessage> {
                     LOGGER.info("msg:" + msg.getBody().toString());
                 }
                 byte[] body = hessianSerialize(msg.getBody());
-                byteBuffer.putShort((short)body.length);
+                byteBuffer.putShort((short) body.length);
                 byteBuffer.putLong(msg.getId());
                 byteBuffer.put(body);
 
@@ -125,7 +125,7 @@ public class MessageCodecHandler extends ByteToMessageCodec<RpcMessage> {
             return;
         }
 
-        int flag = (int)in.readShort();
+        int flag = (int) in.readShort();
 
         boolean isHeartbeat = (FLAG_HEARTBEAT & flag) > 0;
         boolean isRequest = (FLAG_REQUEST & flag) > 0;
@@ -133,7 +133,11 @@ public class MessageCodecHandler extends ByteToMessageCodec<RpcMessage> {
 
         short bodyLength = 0;
         short typeCode = 0;
-        if (!isSeataCodec) { bodyLength = in.readShort(); } else { typeCode = in.readShort(); }
+        if (!isSeataCodec) {
+            bodyLength = in.readShort();
+        } else {
+            typeCode = in.readShort();
+        }
         long msgId = in.readLong();
         if (isHeartbeat) {
             RpcMessage rpcMessage = new RpcMessage();
@@ -182,7 +186,7 @@ public class MessageCodecHandler extends ByteToMessageCodec<RpcMessage> {
         out.add(rpcMessage);
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Receive:" + rpcMessage.getBody() + ",messageId:"
-                + msgId);
+                    + msgId);
         }
 
     }
@@ -218,4 +222,5 @@ public class MessageCodecHandler extends ByteToMessageCodec<RpcMessage> {
         throw new RuntimeException("hessianDeserialize not support");
 
     }
+
 }

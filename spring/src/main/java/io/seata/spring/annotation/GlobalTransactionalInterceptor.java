@@ -48,10 +48,13 @@ import java.util.stream.Collectors;
 public class GlobalTransactionalInterceptor implements MethodInterceptor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobalTransactionalInterceptor.class);
+
     private static final FailureHandler DEFAULT_FAIL_HANDLER = new DefaultFailureHandlerImpl();
 
     private final TransactionalTemplate transactionalTemplate = new TransactionalTemplate();
+
     private final GlobalLockTemplate<Object> globalLockTemplate = new GlobalLockTemplate<>();
+
     private final FailureHandler failureHandler;
 
     /**
@@ -63,17 +66,21 @@ public class GlobalTransactionalInterceptor implements MethodInterceptor {
         if (null == failureHandler) {
             failureHandler = DEFAULT_FAIL_HANDLER;
         }
+
         this.failureHandler = failureHandler;
     }
 
     @Override
     public Object invoke(final MethodInvocation methodInvocation) throws Throwable {
         Class<?> targetClass = (methodInvocation.getThis() != null ? AopUtils.getTargetClass(methodInvocation.getThis()) : null);
+        // 获取具体方法
         Method specificMethod = ClassUtils.getMostSpecificMethod(methodInvocation.getMethod(), targetClass);
+        // 获取原始方法
         final Method method = BridgeMethodResolver.findBridgedMethod(specificMethod);
 
         final GlobalTransactional globalTransactionalAnnotation = getAnnotation(method, GlobalTransactional.class);
         final GlobalLock globalLockAnnotation = getAnnotation(method, GlobalLock.class);
+
         if (globalTransactionalAnnotation != null) {
             return handleGlobalTransaction(methodInvocation, globalTransactionalAnnotation);
         } else if (globalLockAnnotation != null) {
@@ -89,7 +96,7 @@ public class GlobalTransactionalInterceptor implements MethodInterceptor {
                 return methodInvocation.proceed();
             } catch (Throwable e) {
                 if (e instanceof Exception) {
-                    throw (Exception)e;
+                    throw (Exception) e;
                 } else {
                     throw new RuntimeException(e);
                 }
@@ -101,6 +108,7 @@ public class GlobalTransactionalInterceptor implements MethodInterceptor {
                                            final GlobalTransactional globalTrxAnno) throws Throwable {
         try {
             return transactionalTemplate.execute(new TransactionalExecutor() {
+
                 @Override
                 public Object execute() throws Throwable {
                     return methodInvocation.proceed();
@@ -111,14 +119,17 @@ public class GlobalTransactionalInterceptor implements MethodInterceptor {
                     if (!StringUtils.isNullOrEmpty(name)) {
                         return name;
                     }
+
                     return formatMethod(methodInvocation.getMethod());
                 }
 
                 @Override
                 public TransactionInfo getTransactionInfo() {
                     TransactionInfo transactionInfo = new TransactionInfo();
+
                     transactionInfo.setTimeOut(globalTrxAnno.timeoutMills());
                     transactionInfo.setName(name());
+
                     Set<RollbackRule> rollbackRules = new LinkedHashSet<>();
                     for (Class<?> rbRule : globalTrxAnno.rollbackFor()) {
                         rollbackRules.add(new RollbackRule(rbRule));
@@ -126,12 +137,14 @@ public class GlobalTransactionalInterceptor implements MethodInterceptor {
                     for (String rbRule : globalTrxAnno.rollbackForClassName()) {
                         rollbackRules.add(new RollbackRule(rbRule));
                     }
+
                     for (Class<?> rbRule : globalTrxAnno.noRollbackFor()) {
                         rollbackRules.add(new NoRollbackRule(rbRule));
                     }
                     for (String rbRule : globalTrxAnno.noRollbackForClassName()) {
                         rollbackRules.add(new NoRollbackRule(rbRule));
                     }
+
                     transactionInfo.setRollbackRules(rollbackRules);
                     return transactionInfo;
                 }
@@ -152,7 +165,6 @@ public class GlobalTransactionalInterceptor implements MethodInterceptor {
                     throw e.getCause();
                 default:
                     throw new ShouldNeverHappenException("Unknown TransactionalExecutor.Code: " + code);
-
             }
         }
     }
@@ -168,6 +180,7 @@ public class GlobalTransactionalInterceptor implements MethodInterceptor {
         String paramTypes = Arrays.stream(method.getParameterTypes())
                 .map(Class::getName)
                 .collect(Collectors.joining(", ", "(", ")"));
+
         return method.getName() + paramTypes;
     }
 }

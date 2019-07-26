@@ -47,9 +47,8 @@ public class DefaultFailureHandlerImpl implements FailureHandler {
 
     private static final int TICKS_PER_WHEEL = 8;
 
-    private HashedWheelTimer timer = new HashedWheelTimer(
-        new NamedThreadFactory("failedTransactionRetry", 1),
-        TICK_DURATION, TimeUnit.SECONDS, TICKS_PER_WHEEL);
+    private HashedWheelTimer timer = new HashedWheelTimer(new NamedThreadFactory("failedTransactionRetry", 1),
+            TICK_DURATION, TimeUnit.SECONDS, TICKS_PER_WHEEL);
 
     @Override
     public void onBeginFailure(GlobalTransaction tx, Throwable cause) {
@@ -84,14 +83,13 @@ public class DefaultFailureHandlerImpl implements FailureHandler {
         }
 
         @Override
-        public void run(Timeout timeout) throws Exception {
+        public void run(Timeout timeout) {
             if (!isStopped) {
                 if (++count > RETRY_MAX_TIMES) {
-                    LOGGER.error(
-                        "transaction[" + tx.getXid() + "] retry fetch status times exceed the limit [" + RETRY_MAX_TIMES
-                            + " times]");
+                    LOGGER.error("transaction[" + tx.getXid() + "] retry fetch status times exceed the limit [" + RETRY_MAX_TIMES + " times]");
                     return;
                 }
+
                 isStopped = shouldStop(tx, required);
                 timer.newTimeout(this, SCHEDULE_INTERVAL_SECONDS, TimeUnit.SECONDS);
             }
@@ -108,6 +106,7 @@ public class DefaultFailureHandlerImpl implements FailureHandler {
         } catch (TransactionException e) {
             LOGGER.error("fetch GlobalTransaction status error", e);
         }
+
         return false;
     }
 

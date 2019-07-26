@@ -24,10 +24,10 @@ public enum BranchType {
 
     /**
      * The At.
+     * AT Branch
      */
-    // AT Branch
     AT,
-    
+
     /**
      * The TCC.
      */
@@ -40,7 +40,7 @@ public enum BranchType {
      * @return the branch type
      */
     public static BranchType get(byte ordinal) {
-        return get((int)ordinal);
+        return get((int) ordinal);
     }
 
     /**
@@ -55,6 +55,7 @@ public enum BranchType {
                 return branchType;
             }
         }
+
         throw new IllegalArgumentException("Unknown BranchType[" + ordinal + "]");
     }
 }

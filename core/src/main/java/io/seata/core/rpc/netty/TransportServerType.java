@@ -22,10 +22,12 @@ package io.seata.core.rpc.netty;
  * @date 2018 /9/10
  */
 public enum TransportServerType {
+
     /**
      * Native transport server type.
      */
     NATIVE("native"),
+
     /**
      * Nio transport server type.
      */
@@ -39,4 +41,5 @@ public enum TransportServerType {
     TransportServerType(String name) {
         this.name = name;
     }
+
 }

@@ -32,8 +32,11 @@ import java.util.List;
  * @date 2019 /02/12
  */
 public class FileRegistryServiceImpl implements RegistryService<ConfigChangeListener> {
+
     private static volatile FileRegistryServiceImpl instance;
+
     private static final Configuration CONFIG = ConfigurationFactory.getInstance();
+
     private static final String POSTFIX_GROUPLIST = ".grouplist";
     private static final String ENDPOINT_SPLIT_CHAR = ";";
     private static final String IP_PORT_SPLIT_CHAR = ":";
@@ -79,15 +82,18 @@ public class FileRegistryServiceImpl implements RegistryService<ConfigChangeList
 
     @Override
     public List<InetSocketAddress> lookup(String key) throws Exception {
+        // service.vgroup_mapping.{key}
         String clusterName = CONFIG.getConfig(PREFIX_SERVICE_ROOT + CONFIG_SPLIT_CHAR + PREFIX_SERVICE_MAPPING + key);
         if (null == clusterName) {
             return null;
         }
-        String endpointStr = CONFIG.getConfig(
-            PREFIX_SERVICE_ROOT + CONFIG_SPLIT_CHAR + clusterName + POSTFIX_GROUPLIST);
+
+        // service.{clusterName}.grouplist
+        String endpointStr = CONFIG.getConfig(PREFIX_SERVICE_ROOT + CONFIG_SPLIT_CHAR + clusterName + POSTFIX_GROUPLIST);
         if (StringUtils.isNullOrEmpty(endpointStr)) {
             throw new IllegalArgumentException(clusterName + POSTFIX_GROUPLIST + " is required");
         }
+
         String[] endpoints = endpointStr.split(ENDPOINT_SPLIT_CHAR);
         List<InetSocketAddress> inetSocketAddresses = new ArrayList<>();
         for (String endpoint : endpoints) {
@@ -95,8 +101,10 @@ public class FileRegistryServiceImpl implements RegistryService<ConfigChangeList
             if (ipAndPort.length != 2) {
                 throw new IllegalArgumentException("endpoint format should like ip:port");
             }
+
             inetSocketAddresses.add(new InetSocketAddress(ipAndPort[0], Integer.parseInt(ipAndPort[1])));
         }
+
         return inetSocketAddresses;
     }
 
@@ -104,4 +112,5 @@ public class FileRegistryServiceImpl implements RegistryService<ConfigChangeList
     public void close() throws Exception {
 
     }
+
 }

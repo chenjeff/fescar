@@ -138,7 +138,6 @@ public enum GlobalStatus {
     }
 
 
-
     private static final Map<Integer, GlobalStatus> MAP = new HashMap<>(values().length);
 
     static {
@@ -154,7 +153,7 @@ public enum GlobalStatus {
      * @return the global status
      */
     public static GlobalStatus get(byte code) {
-        return get((int)code);
+        return get((int) code);
     }
 
     /**

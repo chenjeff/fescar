@@ -21,7 +21,7 @@ import io.seata.common.util.StringUtils;
 import io.seata.core.model.BranchStatus;
 
 /**
- * branch transaction data object
+ * branch transaction data object.
  *
  * @author zhangsen
  * @data 2019 /3/26

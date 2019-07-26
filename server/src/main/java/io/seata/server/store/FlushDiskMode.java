@@ -16,10 +16,9 @@
 package io.seata.server.store;
 
 /**
- *
  * @author lizhao
  */
-public enum  FlushDiskMode {
+public enum FlushDiskMode {
     /**
      * sync flush disk
      */
@@ -36,9 +35,11 @@ public enum  FlushDiskMode {
     }
 
     public static FlushDiskMode findDiskMode(String modeStr) {
-        if (SYNC_MODEL.modeStr.equals(modeStr)){
+        if (SYNC_MODEL.modeStr.equals(modeStr)) {
             return SYNC_MODEL;
         }
+
         return ASYNC_MODEL;
     }
+
 }

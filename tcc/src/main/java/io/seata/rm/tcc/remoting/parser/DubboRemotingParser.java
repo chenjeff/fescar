@@ -31,14 +31,14 @@ public class DubboRemotingParser extends AbstractedRemotingParser {
     public boolean isReference(Object bean, String beanName) throws FrameworkException {
         Class<?> c = bean.getClass();
         return "com.alibaba.dubbo.config.spring.ReferenceBean".equals(c.getName())
-            || "org.apache.dubbo.config.spring.ReferenceBean".equals(c.getName());
+                || "org.apache.dubbo.config.spring.ReferenceBean".equals(c.getName());
     }
 
     @Override
     public boolean isService(Object bean, String beanName) throws FrameworkException {
         Class<?> c = bean.getClass();
         return "com.alibaba.dubbo.config.spring.ServiceBean".equals(c.getName())
-            || "org.apache.dubbo.config.spring.ServiceBean".equals(c.getName());
+                || "org.apache.dubbo.config.spring.ServiceBean".equals(c.getName());
     }
 
     @Override
@@ -46,21 +46,29 @@ public class DubboRemotingParser extends AbstractedRemotingParser {
         if (!this.isRemoting(bean, beanName)) {
             return null;
         }
+
         try {
             RemotingDesc serviceBeanDesc = new RemotingDesc();
-            Class<?> interfaceClass = (Class<?>)ReflectionUtil.invokeMethod(bean, "getInterfaceClass");
-            String interfaceClassName = (String)ReflectionUtil.getFieldValue(bean, "interfaceName");
-            String version = (String)ReflectionUtil.invokeMethod(bean, "getVersion");
-            String group = (String)ReflectionUtil.invokeMethod(bean, "getGroup");
+
+            Class<?> interfaceClass = (Class<?>) ReflectionUtil.invokeMethod(bean, "getInterfaceClass");
             serviceBeanDesc.setInterfaceClass(interfaceClass);
+
+            String interfaceClassName = (String) ReflectionUtil.getFieldValue(bean, "interfaceName");
             serviceBeanDesc.setInterfaceClassName(interfaceClassName);
+
+            String version = (String) ReflectionUtil.invokeMethod(bean, "getVersion");
             serviceBeanDesc.setUniqueId(version);
+
+            String group = (String) ReflectionUtil.invokeMethod(bean, "getGroup");
             serviceBeanDesc.setGroup(group);
-            serviceBeanDesc.setProtocol(Protocols.DUBBO);
+
+            serviceBeanDesc.setProtocol(getProtocol());
+
             if (isService(bean, beanName)) {
                 Object targetBean = ReflectionUtil.getFieldValue(bean, "ref");
                 serviceBeanDesc.setTargetBean(targetBean);
             }
+
             return serviceBeanDesc;
         } catch (Throwable t) {
             throw new FrameworkException(t);
@@ -71,4 +79,5 @@ public class DubboRemotingParser extends AbstractedRemotingParser {
     public short getProtocol() {
         return Protocols.DUBBO;
     }
+
 }

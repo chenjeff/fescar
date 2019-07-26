@@ -50,5 +50,4 @@ public class DbcpDataSourceGenerator extends AbstractDataSourceGenerator {
         return ds;
     }
 
-
 }

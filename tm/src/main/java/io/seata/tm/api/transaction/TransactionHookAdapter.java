@@ -55,4 +55,5 @@ public class TransactionHookAdapter implements TransactionHook {
     public void afterCompletion() {
 
     }
+
 }

@@ -45,6 +45,7 @@ public abstract class AbstractResourceManager implements ResourceManager {
 
     /**
      * registry branch record
+     *
      * @param branchType the branch type
      * @param resourceId the resource id
      * @param clientId   the client id
@@ -54,7 +55,13 @@ public abstract class AbstractResourceManager implements ResourceManager {
      * @throws TransactionException
      */
     @Override
-    public Long branchRegister(BranchType branchType, String resourceId, String clientId, String xid, String applicationData, String lockKeys) throws TransactionException {
+    public Long branchRegister(BranchType branchType,
+                               String resourceId,
+                               String clientId,
+                               String xid,
+                               String applicationData,
+                               String lockKeys) throws TransactionException {
+
         try {
             BranchRegisterRequest request = new BranchRegisterRequest();
             request.setXid(xid);
@@ -67,6 +74,7 @@ public abstract class AbstractResourceManager implements ResourceManager {
             if (response.getResultCode() == ResultCode.Failed) {
                 throw new TransactionException(response.getTransactionExceptionCode(), "Response[" + response.getMsg() + "]");
             }
+
             return response.getBranchId();
         } catch (TimeoutException toe) {
             throw new TransactionException(TransactionExceptionCode.IO, "RPC Timeout", toe);
@@ -77,6 +85,7 @@ public abstract class AbstractResourceManager implements ResourceManager {
 
     /**
      * report branch status
+     *
      * @param branchType      the branch type
      * @param xid             the xid
      * @param branchId        the branch id
@@ -85,7 +94,12 @@ public abstract class AbstractResourceManager implements ResourceManager {
      * @throws TransactionException
      */
     @Override
-    public void branchReport(BranchType branchType, String xid, long branchId, BranchStatus status, String applicationData) throws TransactionException {
+    public void branchReport(BranchType branchType,
+                             String xid,
+                             long branchId,
+                             BranchStatus status,
+                             String applicationData) throws TransactionException {
+
         try {
             BranchReportRequest request = new BranchReportRequest();
             request.setXid(xid);
@@ -118,4 +132,5 @@ public abstract class AbstractResourceManager implements ResourceManager {
     public void registerResource(Resource resource) {
         RmRpcClient.getInstance().registerResource(resource.getResourceGroupId(), resource.getResourceId());
     }
+
 }

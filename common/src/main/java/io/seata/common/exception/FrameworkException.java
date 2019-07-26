@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
  * @date 2018 /10/9
  */
 public class FrameworkException extends RuntimeException {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(FrameworkException.class);
 
     private static final long serialVersionUID = 5531074229174745826L;
@@ -128,7 +129,7 @@ public class FrameworkException extends RuntimeException {
     public static FrameworkException nestedException(String msg, Throwable e) {
         LOGGER.error(msg, e.getMessage(), e);
         if (e instanceof FrameworkException) {
-            return (FrameworkException)e;
+            return (FrameworkException) e;
         }
 
         return new FrameworkException(e, msg);
@@ -154,9 +155,10 @@ public class FrameworkException extends RuntimeException {
     public static SQLException nestedSQLException(String msg, Throwable e) {
         LOGGER.error(msg, e.getMessage(), e);
         if (e instanceof SQLException) {
-            return (SQLException)e;
+            return (SQLException) e;
         }
 
         return new SQLException(e);
     }
+
 }

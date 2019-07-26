@@ -24,6 +24,7 @@ import io.netty.buffer.ByteBuf;
  * @date 2018 /9/14
  */
 public interface MessageCodec {
+
     /**
      * Gets type code.
      *
@@ -45,4 +46,5 @@ public interface MessageCodec {
      * @return the boolean
      */
     boolean decode(ByteBuf in);
+
 }

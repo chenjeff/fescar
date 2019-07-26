@@ -85,19 +85,21 @@ public class DefaultGlobalTransaction implements GlobalTransaction {
             }
             return;
         }
+
         if (xid != null) {
             throw new IllegalStateException();
         }
+
         if (RootContext.getXID() != null) {
             throw new IllegalStateException();
         }
+
         xid = transactionManager.begin(null, null, name, timeout);
         status = GlobalStatus.Begin;
         RootContext.bind(xid);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Begin new global transaction [" + xid + "]");
         }
-
     }
 
     @Override
@@ -109,6 +111,7 @@ public class DefaultGlobalTransaction implements GlobalTransaction {
             }
             return;
         }
+
         if (xid == null) {
             throw new IllegalStateException();
         }
@@ -119,10 +122,10 @@ public class DefaultGlobalTransaction implements GlobalTransaction {
                 RootContext.unbind();
             }
         }
+
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("[" + xid + "] commit status:" + status);
         }
-
     }
 
     @Override
@@ -134,6 +137,7 @@ public class DefaultGlobalTransaction implements GlobalTransaction {
             }
             return;
         }
+
         if (xid == null) {
             throw new IllegalStateException();
         }
@@ -144,6 +148,7 @@ public class DefaultGlobalTransaction implements GlobalTransaction {
                 RootContext.unbind();
             }
         }
+
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("[" + xid + "] rollback status:" + status);
         }
@@ -154,6 +159,7 @@ public class DefaultGlobalTransaction implements GlobalTransaction {
         if (xid == null) {
             return GlobalStatus.UnKnown;
         }
+
         status = transactionManager.getStatus(xid);
         return status;
     }
@@ -167,6 +173,6 @@ public class DefaultGlobalTransaction implements GlobalTransaction {
         if (xid == null) {
             throw new ShouldNeverHappenException();
         }
-
     }
+
 }

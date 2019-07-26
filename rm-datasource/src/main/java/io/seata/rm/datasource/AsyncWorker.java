@@ -69,8 +69,7 @@ public class AsyncWorker implements ResourceManagerInbound {
          * @param resourceId      the resource id
          * @param applicationData the application data
          */
-        public Phase2Context(BranchType branchType, String xid, long branchId, String resourceId,
-                             String applicationData) {
+        public Phase2Context(BranchType branchType, String xid, long branchId, String resourceId, String applicationData) {
             this.xid = xid;
             this.branchId = branchId;
             this.resourceId = resourceId;
@@ -82,14 +81,17 @@ public class AsyncWorker implements ResourceManagerInbound {
          * The Xid.
          */
         String xid;
+
         /**
          * The Branch id.
          */
         long branchId;
+
         /**
          * The Resource id.
          */
         String resourceId;
+
         /**
          * The Application data.
          */
@@ -99,23 +101,26 @@ public class AsyncWorker implements ResourceManagerInbound {
          * the branch Type
          */
         BranchType branchType;
+
     }
 
-    private static int ASYNC_COMMIT_BUFFER_LIMIT = ConfigurationFactory.getInstance().getInt(
-        CLIENT_ASYNC_COMMIT_BUFFER_LIMIT, 10000);
+    /**
+     * CLIENT_ASYNC_COMMIT_BUFFER_LIMIT = async.commit.buffer.limit
+     */
+    private static int ASYNC_COMMIT_BUFFER_LIMIT = ConfigurationFactory.getInstance().getInt(CLIENT_ASYNC_COMMIT_BUFFER_LIMIT, 10000);
 
-    private static final BlockingQueue<Phase2Context> ASYNC_COMMIT_BUFFER = new LinkedBlockingQueue<>(
-        ASYNC_COMMIT_BUFFER_LIMIT);
+    private static final BlockingQueue<Phase2Context> ASYNC_COMMIT_BUFFER = new LinkedBlockingQueue<>(ASYNC_COMMIT_BUFFER_LIMIT);
 
     private static ScheduledExecutorService timerExecutor;
 
     @Override
-    public BranchStatus branchCommit(BranchType branchType, String xid, long branchId, String resourceId,
-                                     String applicationData) throws TransactionException {
+    public BranchStatus branchCommit(BranchType branchType, String xid, long branchId, String resourceId, String applicationData) {
+
         if (!ASYNC_COMMIT_BUFFER.offer(new Phase2Context(branchType, xid, branchId, resourceId, applicationData))) {
             LOGGER.warn("Async commit buffer is FULL. Rejected branch [" + branchId + "/" + xid
-                + "] will be handled by housekeeping later.");
+                    + "] will be handled by housekeeping later.");
         }
+
         return BranchStatus.PhaseTwo_Committed;
     }
 
@@ -125,14 +130,13 @@ public class AsyncWorker implements ResourceManagerInbound {
     public synchronized void init() {
         LOGGER.info("Async Commit Buffer Limit: " + ASYNC_COMMIT_BUFFER_LIMIT);
         timerExecutor = new ScheduledThreadPoolExecutor(1,
-            new NamedThreadFactory("AsyncWorker", 1, true));
+                new NamedThreadFactory("AsyncWorker", 1, true));
+
         timerExecutor.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
                 try {
-
                     doBranchCommits();
-
                 } catch (Throwable e) {
                     LOGGER.info("Failed at async committing ... " + e.getMessage());
 
@@ -154,31 +158,34 @@ public class AsyncWorker implements ResourceManagerInbound {
                 contextsGroupedByResourceId = new ArrayList<>();
                 mappedContexts.put(commitContext.resourceId, contextsGroupedByResourceId);
             }
-            contextsGroupedByResourceId.add(commitContext);
 
+            contextsGroupedByResourceId.add(commitContext);
         }
 
         for (Map.Entry<String, List<Phase2Context>> entry : mappedContexts.entrySet()) {
             Connection conn = null;
             try {
                 try {
-                    DataSourceManager resourceManager = (DataSourceManager)DefaultResourceManager.get()
-                        .getResourceManager(BranchType.AT);
+                    DataSourceManager resourceManager = (DataSourceManager) DefaultResourceManager.get().getResourceManager(BranchType.AT);
                     DataSourceProxy dataSourceProxy = resourceManager.get(entry.getKey());
                     if (dataSourceProxy == null) {
                         throw new ShouldNeverHappenException("Failed to find resource on " + entry.getKey());
                     }
+
                     conn = dataSourceProxy.getPlainConnection();
                 } catch (SQLException sqle) {
                     LOGGER.warn("Failed to get connection for async committing on " + entry.getKey(), sqle);
                     continue;
                 }
+
                 List<Phase2Context> contextsGroupedByResourceId = entry.getValue();
                 Set<String> xids = new LinkedHashSet<>(UNDOLOG_DELETE_LIMIT_SIZE);
                 Set<Long> branchIds = new LinkedHashSet<>(UNDOLOG_DELETE_LIMIT_SIZE);
+
                 for (Phase2Context commitContext : contextsGroupedByResourceId) {
                     xids.add(commitContext.xid);
                     branchIds.add(commitContext.branchId);
+
                     int maxSize = xids.size() > branchIds.size() ? xids.size() : branchIds.size();
                     if (maxSize == UNDOLOG_DELETE_LIMIT_SIZE) {
                         try {
@@ -186,6 +193,7 @@ public class AsyncWorker implements ResourceManagerInbound {
                         } catch (Exception ex) {
                             LOGGER.warn("Failed to batch delete undo log [" + branchIds + "/" + xids + "]", ex);
                         }
+
                         xids.clear();
                         branchIds.clear();
                     }
@@ -200,7 +208,6 @@ public class AsyncWorker implements ResourceManagerInbound {
                 } catch (Exception ex) {
                     LOGGER.warn("Failed to batch delete undo log [" + branchIds + "/" + xids + "]", ex);
                 }
-
             } finally {
                 if (conn != null) {
                     try {
@@ -214,9 +221,8 @@ public class AsyncWorker implements ResourceManagerInbound {
     }
 
     @Override
-    public BranchStatus branchRollback(BranchType branchType, String xid, long branchId, String resourceId,
-                                       String applicationData) throws TransactionException {
+    public BranchStatus branchRollback(BranchType branchType, String xid, long branchId, String resourceId, String applicationData) {
         throw new NotSupportYetException();
-
     }
+
 }

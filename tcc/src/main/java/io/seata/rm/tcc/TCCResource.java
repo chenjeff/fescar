@@ -223,6 +223,7 @@ public class TCCResource implements Resource {
         if (!(obj instanceof TCCResource)) {
             return false;
         }
-        return this.actionName.equals(((TCCResource)obj).actionName);
+        return this.actionName.equals(((TCCResource) obj).actionName);
     }
+
 }

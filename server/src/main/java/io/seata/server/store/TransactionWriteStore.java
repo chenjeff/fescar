@@ -29,6 +29,7 @@ import io.seata.server.store.TransactionStoreManager.LogOperation;
  * @date 2018 /12/11
  */
 public class TransactionWriteStore implements SessionStorable {
+
     private SessionStorable sessionRequest;
     private LogOperation operate;
 
@@ -46,7 +47,8 @@ public class TransactionWriteStore implements SessionStorable {
     /**
      * Instantiates a new Transaction write store.
      */
-    public TransactionWriteStore() {}
+    public TransactionWriteStore() {
+    }
 
     /**
      * Gets session request.
@@ -124,6 +126,8 @@ public class TransactionWriteStore implements SessionStorable {
             default:
                 throw new ShouldNeverHappenException("incorrect logOperation");
         }
+
         return sessionStorable;
     }
+
 }

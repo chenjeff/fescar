@@ -74,7 +74,7 @@ import static io.seata.common.exception.FrameworkErrorCode.NoAvailableService;
  * @date 2018 /9/12
  */
 public abstract class AbstractRpcRemotingClient extends AbstractRpcRemoting
-    implements RemotingService, RegisterMsgListener, ClientMessageSender {
+        implements RemotingService, RegisterMsgListener, ClientMessageSender {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractRpcRemotingClient.class);
     private final NettyClientConfig nettyClientConfig;
@@ -127,8 +127,8 @@ public abstract class AbstractRpcRemotingClient extends AbstractRpcRemoting
         this.nettyClientConfig = nettyClientConfig;
         int selectorThreadSizeThreadSize = this.nettyClientConfig.getClientSelectorThreadSize();
         this.eventLoopGroupWorker = new NioEventLoopGroup(selectorThreadSizeThreadSize,
-            new NamedThreadFactory(getThreadPrefix(this.nettyClientConfig.getClientSelectorThreadPrefix()),
-                selectorThreadSizeThreadSize));
+                new NamedThreadFactory(getThreadPrefix(this.nettyClientConfig.getClientSelectorThreadPrefix()),
+                        selectorThreadSizeThreadSize));
         this.defaultEventExecutorGroup = eventExecutorGroup;
     }
 
@@ -145,15 +145,15 @@ public abstract class AbstractRpcRemotingClient extends AbstractRpcRemoting
 
         if (this.defaultEventExecutorGroup == null) {
             this.defaultEventExecutorGroup = new DefaultEventExecutorGroup(nettyClientConfig.getClientWorkerThreads(),
-                new NamedThreadFactory(getThreadPrefix(nettyClientConfig.getClientWorkerThreadPrefix()),
-                    nettyClientConfig.getClientWorkerThreads()));
+                    new NamedThreadFactory(getThreadPrefix(nettyClientConfig.getClientWorkerThreadPrefix()),
+                            nettyClientConfig.getClientWorkerThreads()));
         }
         this.bootstrap.group(this.eventLoopGroupWorker).channel(
-            nettyClientConfig.getClientChannelClazz()).option(
-            ChannelOption.TCP_NODELAY, true).option(ChannelOption.SO_KEEPALIVE, true).option(
-            ChannelOption.CONNECT_TIMEOUT_MILLIS, nettyClientConfig.getConnectTimeoutMillis()).option(
-            ChannelOption.SO_SNDBUF, nettyClientConfig.getClientSocketSndBufSize()).option(ChannelOption.SO_RCVBUF,
-            nettyClientConfig.getClientSocketRcvBufSize());
+                nettyClientConfig.getClientChannelClazz()).option(
+                ChannelOption.TCP_NODELAY, true).option(ChannelOption.SO_KEEPALIVE, true).option(
+                ChannelOption.CONNECT_TIMEOUT_MILLIS, nettyClientConfig.getConnectTimeoutMillis()).option(
+                ChannelOption.SO_SNDBUF, nettyClientConfig.getClientSocketSndBufSize()).option(ChannelOption.SO_RCVBUF,
+                nettyClientConfig.getClientSocketRcvBufSize());
 
         if (nettyClientConfig.enableNative()) {
             if (PlatformDependent.isOsx()) {
@@ -162,7 +162,7 @@ public abstract class AbstractRpcRemotingClient extends AbstractRpcRemoting
                 }
             } else {
                 bootstrap.option(EpollChannelOption.EPOLL_MODE, EpollMode.EDGE_TRIGGERED)
-                    .option(EpollChannelOption.TCP_QUICKACK, true);
+                        .option(EpollChannelOption.TCP_QUICKACK, true);
             }
         }
         if (nettyClientConfig.isUseConnPool()) {
@@ -170,47 +170,46 @@ public abstract class AbstractRpcRemotingClient extends AbstractRpcRemoting
                 @Override
                 protected FixedChannelPool newPool(InetSocketAddress key) {
                     FixedChannelPool fixedClientChannelPool = new FixedChannelPool(
-                        bootstrap.remoteAddress(key),
-                        new DefaultChannelPoolHandler() {
-                            @Override
-                            public void channelCreated(Channel ch) throws Exception {
-                                super.channelCreated(ch);
-                                final ChannelPipeline pipeline = ch.pipeline();
-                                pipeline.addLast(defaultEventExecutorGroup,
-                                    new IdleStateHandler(nettyClientConfig.getChannelMaxReadIdleSeconds(),
-                                        nettyClientConfig.getChannelMaxWriteIdleSeconds(),
-                                        nettyClientConfig.getChannelMaxAllIdleSeconds()));
-                                pipeline.addLast(defaultEventExecutorGroup, new RpcClientHandler());
-                            }
-                        },
-                        ChannelHealthChecker.ACTIVE,
-                        AcquireTimeoutAction.FAIL,
-                        nettyClientConfig.getMaxAcquireConnMills(),
-                        nettyClientConfig.getPerHostMaxConn(),
-                        nettyClientConfig.getPendingConnSize(),
-                        false
+                            bootstrap.remoteAddress(key),
+                            new DefaultChannelPoolHandler() {
+                                @Override
+                                public void channelCreated(Channel ch) throws Exception {
+                                    super.channelCreated(ch);
+                                    final ChannelPipeline pipeline = ch.pipeline();
+                                    pipeline.addLast(defaultEventExecutorGroup,
+                                            new IdleStateHandler(nettyClientConfig.getChannelMaxReadIdleSeconds(),
+                                                    nettyClientConfig.getChannelMaxWriteIdleSeconds(),
+                                                    nettyClientConfig.getChannelMaxAllIdleSeconds()));
+                                    pipeline.addLast(defaultEventExecutorGroup, new RpcClientHandler());
+                                }
+                            },
+                            ChannelHealthChecker.ACTIVE,
+                            AcquireTimeoutAction.FAIL,
+                            nettyClientConfig.getMaxAcquireConnMills(),
+                            nettyClientConfig.getPerHostMaxConn(),
+                            nettyClientConfig.getPendingConnSize(),
+                            false
                     );
                     return fixedClientChannelPool;
 
                 }
             };
         } else {
-            bootstrap.handler(
-                new ChannelInitializer<SocketChannel>() {
+            bootstrap.handler(new ChannelInitializer<SocketChannel>() {
 
-                    @Override
-                    public void initChannel(SocketChannel ch) {
-                        ChannelPipeline pipeline = ch.pipeline();
-                        pipeline.addLast(
+                @Override
+                public void initChannel(SocketChannel ch) {
+                    ChannelPipeline pipeline = ch.pipeline();
+                    pipeline.addLast(
                             new IdleStateHandler(nettyClientConfig.getChannelMaxReadIdleSeconds(),
-                                nettyClientConfig.getChannelMaxWriteIdleSeconds(),
-                                nettyClientConfig.getChannelMaxAllIdleSeconds()))
+                                    nettyClientConfig.getChannelMaxWriteIdleSeconds(),
+                                    nettyClientConfig.getChannelMaxAllIdleSeconds()))
                             .addLast(new MessageCodecHandler());
-                        if (null != channelHandlers) {
-                            addChannelPipelineLast(ch, channelHandlers);
-                        }
+                    if (null != channelHandlers) {
+                        addChannelPipelineLast(ch, channelHandlers);
                     }
-                });
+                }
+            });
         }
         if (initialized.compareAndSet(false, true) && LOGGER.isInfoEnabled()) {
             LOGGER.info("AbstractRpcRemotingClient has started");
@@ -340,16 +339,18 @@ public abstract class AbstractRpcRemotingClient extends AbstractRpcRemoting
         } catch (Exception exx) {
             LOGGER.error("Failed to get available servers: {}" + exx.getMessage());
         }
+
         if (CollectionUtils.isEmpty(availList)) {
             LOGGER.error("no available server to connect.");
             return;
         }
+
         for (String serverAddress : availList) {
             try {
                 connect(serverAddress);
             } catch (Exception e) {
                 LOGGER.error(FrameworkErrorCode.NetConnect.getErrCode(),
-                    "can not connect to " + serverAddress + " cause:" + e.getMessage(), e);
+                        "can not connect to " + serverAddress + " cause:" + e.getMessage(), e);
             }
         }
     }
@@ -363,28 +364,29 @@ public abstract class AbstractRpcRemotingClient extends AbstractRpcRemoting
      */
     protected List<String> getAvailServerList(String transactionServiceGroup) throws Exception {
         List<String> availList = new ArrayList<>();
-        List<InetSocketAddress> availInetSocketAddressList = RegistryFactory.getInstance().lookup(
-            transactionServiceGroup);
+        List<InetSocketAddress> availInetSocketAddressList = RegistryFactory.getInstance().lookup(transactionServiceGroup);
         if (!CollectionUtils.isEmpty(availInetSocketAddressList)) {
             for (InetSocketAddress address : availInetSocketAddressList) {
                 availList.add(NetUtil.toStringAddress(address));
             }
         }
+
         return availList;
     }
 
     protected String loadBalance(String transactionServiceGroup) {
         InetSocketAddress address = null;
         try {
-            List<InetSocketAddress> inetSocketAddressList = RegistryFactory.getInstance().lookup(
-                transactionServiceGroup);
+            List<InetSocketAddress> inetSocketAddressList = RegistryFactory.getInstance().lookup(transactionServiceGroup);
             address = LoadBalanceFactory.getInstance().select(inetSocketAddressList);
         } catch (Exception ignore) {
             LOGGER.error(ignore.getMessage());
         }
+
         if (address == null) {
             throw new FrameworkException(NoAvailableService);
         }
+
         return NetUtil.toStringAddress(address);
     }
 
@@ -438,10 +440,12 @@ public abstract class AbstractRpcRemotingClient extends AbstractRpcRemoting
             while (true) {
                 synchronized (mergeLock) {
                     try {
+                        // 1ms
                         mergeLock.wait(MAX_MERGE_SEND_MILLS);
                     } catch (InterruptedException e) {
                     }
                 }
+
                 isSending = true;
                 for (String address : basketMap.keySet()) {
                     BlockingQueue<RpcMessage> basket = basketMap.get(address);
@@ -455,16 +459,19 @@ public abstract class AbstractRpcRemotingClient extends AbstractRpcRemoting
                         mergeMessage.msgs.add((AbstractMessage) msg.getBody());
                         mergeMessage.msgIds.add(msg.getId());
                     }
+
                     if (mergeMessage.msgIds.size() > 1) {
                         printMergeMessageLog(mergeMessage);
                     }
+
                     Channel sendChannel = null;
                     try {
                         sendChannel = connect(address);
                         sendRequest(sendChannel, mergeMessage);
                     } catch (FrameworkException e) {
                         if (e.getErrcode() == FrameworkErrorCode.ChannelIsNotWritable
-                            && address != null && sendChannel != null) {
+                                && address != null
+                                && sendChannel != null) {
                             destroyChannel(address, sendChannel);
                         }
                         // fast fail
@@ -477,6 +484,7 @@ public abstract class AbstractRpcRemotingClient extends AbstractRpcRemoting
                         LOGGER.error("", "client merge call failed", e);
                     }
                 }
+
                 isSending = false;
             }
         }
@@ -487,14 +495,17 @@ public abstract class AbstractRpcRemotingClient extends AbstractRpcRemoting
                 for (AbstractMessage cm : mergeMessage.msgs) {
                     LOGGER.debug(cm.toString());
                 }
+
                 StringBuffer sb = new StringBuffer();
                 for (long l : mergeMessage.msgIds) {
                     sb.append(MSG_ID_PREFIX).append(l).append(SINGLE_LOG_POSTFIX);
                 }
+
                 sb.append("\n");
                 for (long l : futures.keySet()) {
                     sb.append(FUTURES_PREFIX).append(l).append(SINGLE_LOG_POSTFIX);
                 }
+
                 LOGGER.debug(sb.toString());
             }
         }

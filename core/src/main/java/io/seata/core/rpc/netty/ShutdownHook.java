@@ -71,13 +71,14 @@ public class ShutdownHook extends Thread {
     }
 
     public void destroyAll() {
-
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("destoryAll starting");
         }
+
         if (!destroyed.compareAndSet(false, true) && CollectionUtils.isEmpty(disposables)) {
             return;
         }
+
         for (Disposable disposable : disposables) {
             disposable.destroy();
         }

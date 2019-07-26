@@ -34,6 +34,7 @@ public interface TransactionalExecutor {
 
     /**
      * transaction conf or other attr
+     *
      * @return
      */
     TransactionInfo getTransactionInfo();

@@ -33,4 +33,5 @@ public class GlobalStatusRequest extends AbstractGlobalEndRequest {
     public AbstractTransactionResponse handle(RpcContext rpcContext) {
         return handler.handle(this, rpcContext);
     }
+
 }

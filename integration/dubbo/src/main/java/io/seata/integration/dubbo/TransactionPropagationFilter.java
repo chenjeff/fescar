@@ -39,16 +39,20 @@ public class TransactionPropagationFilter implements Filter {
 
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
+        // get xid  from share-cache
         String xid = RootContext.getXID();
         String rpcXid = RpcContext.getContext().getAttachment(RootContext.KEY_XID);
         if (LOGGER.isDebugEnabled()) {
+            // logger
             LOGGER.debug("xid in RootContext[" + xid + "] xid in RpcContext[" + rpcXid + "]");
         }
+
         boolean bind = false;
         if (xid != null) {
             RpcContext.getContext().setAttachment(RootContext.KEY_XID, xid);
         } else {
             if (rpcXid != null) {
+                // cache xid
                 RootContext.bind(rpcXid);
                 bind = true;
                 if (LOGGER.isDebugEnabled()) {
@@ -56,18 +60,20 @@ public class TransactionPropagationFilter implements Filter {
                 }
             }
         }
+
         try {
             return invoker.invoke(invocation);
-
         } finally {
             if (bind) {
                 String unbindXid = RootContext.unbind();
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("unbind[" + unbindXid + "] from RootContext");
                 }
+
                 if (!rpcXid.equalsIgnoreCase(unbindXid)) {
                     LOGGER.warn("xid in change during RPC from " + rpcXid + " to " + unbindXid);
                     if (unbindXid != null) {
+                        // if not equals reset xid
                         RootContext.bind(unbindXid);
                         LOGGER.warn("bind [" + unbindXid + "] back to RootContext");
                     }

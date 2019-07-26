@@ -40,44 +40,43 @@ public class LockStoreSqls {
      * The constant ALL_COLUMNS.
      */
     public static final String ALL_COLUMNS
-        = "xid, transaction_id, branch_id, resource_id, table_name, pk, row_key, gmt_create, gmt_modified";
+            = "xid, transaction_id, branch_id, resource_id, table_name, pk, row_key, gmt_create, gmt_modified";
 
     /**
      * The constant INSERT_LOCK_SQL_MYSQL.
      */
-    public static final String INSERT_LOCK_SQL_MYSQL = "insert into " + LOCK_TABLE_PLACEHOLD + "(" + ALL_COLUMNS + ")" +
-        "values (?, ?, ?, ?, ?, ?, ?, now(), now())";
+    public static final String INSERT_LOCK_SQL_MYSQL = "insert into " + LOCK_TABLE_PLACEHOLD + "(" + ALL_COLUMNS + ")"
+            + "values (?, ?, ?, ?, ?, ?, ?, now(), now())";
 
     /**
      * The constant INSERT_LOCK_SQL_ORACLE.
      */
     public static final String INSERT_LOCK_SQL_ORACLE = "insert into " + LOCK_TABLE_PLACEHOLD + "(" + ALL_COLUMNS + ")"
-        +
-        "values (?, ?, ?, ?, ?, ?, ?, sysdate, sysdate)";
+            + "values (?, ?, ?, ?, ?, ?, ?, sysdate, sysdate)";
 
     /**
      * The constant DELETE_LOCK_SQL.
      */
     public static final String DELETE_LOCK_SQL = "delete from " + LOCK_TABLE_PLACEHOLD
-        + " where row_key = ? and xid = ?";
+            + " where row_key = ? and xid = ?";
 
     /**
      * The constant BATCH_DELETE_LOCK_SQL.
      */
     public static final String BATCH_DELETE_LOCK_SQL = "delete from " + LOCK_TABLE_PLACEHOLD
-        + " where xid = ? and row_key in (" + IN_PARAMS_PLACEHOLD + ") ";
+            + " where xid = ? and row_key in (" + IN_PARAMS_PLACEHOLD + ") ";
 
     /**
      * The constant QUERY_LOCK_SQL.
      */
     public static final String QUERY_LOCK_SQL = "select " + ALL_COLUMNS + " from " + LOCK_TABLE_PLACEHOLD
-        + " where row_key = ? ";
+            + " where row_key = ? ";
 
     /**
      * The constant CHECK_LOCK_SQL.
      */
     public static final String CHECK_LOCK_SQL = "select " + ALL_COLUMNS + " from " + LOCK_TABLE_PLACEHOLD
-        + " where row_key in (" + IN_PARAMS_PLACEHOLD + ")";
+            + " where row_key in (" + IN_PARAMS_PLACEHOLD + ")";
 
     /**
      * Get insert lock sql string.
@@ -88,8 +87,8 @@ public class LockStoreSqls {
      */
     public static String getInsertLockSQL(String lockTable, String dbType) {
         if (DBType.MYSQL.name().equalsIgnoreCase(dbType)
-            || DBType.OCEANBASE.name().equalsIgnoreCase(dbType)
-            || DBType.H2.name().equalsIgnoreCase(dbType)) {
+                || DBType.OCEANBASE.name().equalsIgnoreCase(dbType)
+                || DBType.H2.name().equalsIgnoreCase(dbType)) {
             return INSERT_LOCK_SQL_MYSQL.replace(LOCK_TABLE_PLACEHOLD, lockTable);
         } else if (DBType.ORACLE.name().equalsIgnoreCase(dbType)) {
             return INSERT_LOCK_SQL_ORACLE.replace(LOCK_TABLE_PLACEHOLD, lockTable);
@@ -118,8 +117,7 @@ public class LockStoreSqls {
      * @return the string
      */
     public static String getBatchDeleteLockSql(String lockTable, String paramPlaceHold, String dbType) {
-        return BATCH_DELETE_LOCK_SQL.replace(LOCK_TABLE_PLACEHOLD, lockTable).replace(IN_PARAMS_PLACEHOLD,
-            paramPlaceHold);
+        return BATCH_DELETE_LOCK_SQL.replace(LOCK_TABLE_PLACEHOLD, lockTable).replace(IN_PARAMS_PLACEHOLD, paramPlaceHold);
     }
 
     /**

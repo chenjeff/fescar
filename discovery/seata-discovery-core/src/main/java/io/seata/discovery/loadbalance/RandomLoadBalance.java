@@ -36,4 +36,5 @@ public class RandomLoadBalance extends AbstractLoadBalance {
         int length = invokers.size();
         return invokers.get(random.nextInt(length));
     }
+
 }

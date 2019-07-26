@@ -56,6 +56,7 @@ public class RootContext {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("bind " + xid);
         }
+
         CONTEXT_HOLDER.put(KEY_XID, xid);
     }
 
@@ -79,9 +80,11 @@ public class RootContext {
      */
     public static String unbind() {
         String xid = CONTEXT_HOLDER.remove(KEY_XID);
+
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("unbind " + xid);
         }
+
         return xid;
     }
 

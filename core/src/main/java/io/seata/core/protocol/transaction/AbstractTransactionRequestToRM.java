@@ -42,4 +42,5 @@ public abstract class AbstractTransactionRequestToRM extends AbstractTransaction
     public void setRMInboundMessageHandler(RMInboundHandler handler) {
         this.handler = handler;
     }
+
 }

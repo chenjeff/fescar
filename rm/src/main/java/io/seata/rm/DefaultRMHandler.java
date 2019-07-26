@@ -36,8 +36,7 @@ import io.seata.core.protocol.transaction.BranchRollbackResponse;
  */
 public class DefaultRMHandler extends AbstractRMHandler {
 
-    protected static Map<BranchType, AbstractRMHandler> allRMHandlersMap
-        = new ConcurrentHashMap<BranchType, AbstractRMHandler>();
+    protected static Map<BranchType, AbstractRMHandler> allRMHandlersMap = new ConcurrentHashMap<BranchType, AbstractRMHandler>();
 
     protected DefaultRMHandler() {
         initRMHandlers();

@@ -22,26 +22,32 @@ package io.seata.config;
  * @date 2019 /2/1
  */
 public enum ConfigType {
+
     /**
      * File config type.
      */
     File,
+
     /**
      * zookeeper config type.
      */
     ZK,
+
     /**
      * Nacos config type.
      */
     Nacos,
+
     /**
      * Apollo config type.
      */
     Apollo,
+
     /**
      * Consul config type
      */
     Consul,
+
     /**
      * Etcd3 config type
      */
@@ -59,6 +65,8 @@ public enum ConfigType {
                 return configType;
             }
         }
+
         throw new IllegalArgumentException("illegal type:" + name);
     }
+
 }

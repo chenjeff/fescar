@@ -539,11 +539,12 @@ public class MySQLKeywordChecker implements KeywordChecker {
         if (keywordSet.contains(fieldOrTableName)) {
             return true;
         }
+
         if (null != fieldOrTableName) {
             fieldOrTableName = fieldOrTableName.toUpperCase();
         }
-        return keywordSet.contains(fieldOrTableName);
 
+        return keywordSet.contains(fieldOrTableName);
     }
 
     @Override

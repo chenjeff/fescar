@@ -43,7 +43,7 @@ public class SpringProxyUtils {
             if (AopUtils.isJdkDynamicProxy(proxy)) {
                 TargetSource targetSource = advised.getTargetSource();
                 return targetSource instanceof EmptyTargetSource ? getFirstInterfaceByAdvised(advised)
-                    : targetSource.getTarget().getClass();
+                        : targetSource.getTarget().getClass();
             }
             Object target = advised.getTargetSource().getTarget();
             return findTargetClass(target);
@@ -96,11 +96,13 @@ public class SpringProxyUtils {
         } else {
             h = proxy.getClass().getDeclaredField("CGLIB$CALLBACK_0");
         }
+
         h.setAccessible(true);
         Object dynamicAdvisedInterceptor = h.get(proxy);
         Field advised = dynamicAdvisedInterceptor.getClass().getDeclaredField("advised");
         advised.setAccessible(true);
-        return (AdvisedSupport)advised.get(dynamicAdvisedInterceptor);
+
+        return (AdvisedSupport) advised.get(dynamicAdvisedInterceptor);
     }
 
     /**
@@ -113,12 +115,14 @@ public class SpringProxyUtils {
         if (bean == null) {
             return false;
         }
-        //check dubbo proxy ?
+
+        // check dubbo proxy ?
         String proxyClassName = bean.getClass().getName();
         if (proxyClassName.startsWith("com.alibaba.dubbo.common.bytecode.proxy")
-            || proxyClassName.startsWith("org.apache.dubbo.common.bytecode.proxy")) {
+                || proxyClassName.startsWith("org.apache.dubbo.common.bytecode.proxy")) {
             return true;
         }
+
         return Proxy.class.isAssignableFrom(bean.getClass()) || AopUtils.isAopProxy(bean);
     }
 
@@ -134,9 +138,9 @@ public class SpringProxyUtils {
             throw new java.lang.IllegalArgumentException("proxy can not be null");
         }
 
-        //jdk proxy
+        // jdk proxy
         if (Proxy.class.isAssignableFrom(proxy.getClass())) {
-            Proxy p = (Proxy)proxy;
+            Proxy p = (Proxy) proxy;
             return p.getClass().getInterfaces()[0];
         }
 
@@ -154,7 +158,7 @@ public class SpringProxyUtils {
         if (proxy == null) {
             throw new java.lang.IllegalArgumentException("proxy can not be null");
         }
-        //not proxy
+        // not proxy
         if (!AopUtils.isAopProxy(proxy)) {
             return proxy.getClass();
         }

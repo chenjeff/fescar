@@ -21,12 +21,15 @@ import io.seata.common.loader.EnhancedServiceLoader;
 import java.util.Objects;
 
 /**
+ * load config from registry.conf or registry-{env}.conf
+ * <p>
  * The type Configuration factory.
  *
  * @author jimin.jm @alibaba-inc.com
  * @author Geng Zhang
  */
 public final class ConfigurationFactory {
+
     private static final String REGISTRY_CONF = "registry.conf";
     private static final String REGISTRY_CONF_PREFIX = "registry";
     private static final String REGISTRY_CONF_SUFFIX = ".conf";
@@ -37,17 +40,30 @@ public final class ConfigurationFactory {
      * The constant FILE_INSTANCE.
      */
     private static String ENV_VALUE;
+
     static {
+        // SEATA_CONFIG_ENV
         String env = System.getenv(ENV_SYSTEM_KEY);
-        if(env != null && System.getProperty(ENV_PROPERTY_KEY) == null){
+        // env
+        if (env != null && System.getProperty(ENV_PROPERTY_KEY) == null) {
             //Help users get
             System.setProperty(ENV_PROPERTY_KEY, env);
         }
+
         ENV_VALUE = System.getProperty(ENV_PROPERTY_KEY);
     }
 
+    /**
+     * registry.conf
+     */
     private static final Configuration DEFAULT_FILE_INSTANCE = new FileConfiguration(REGISTRY_CONF_PREFIX + REGISTRY_CONF_SUFFIX);
-    public static final Configuration CURRENT_FILE_INSTANCE = (ENV_VALUE == null || DEFAULT_ENV_VALUE.equals(ENV_VALUE)) ? DEFAULT_FILE_INSTANCE : new FileConfiguration(REGISTRY_CONF_PREFIX + "-" + ENV_VALUE + REGISTRY_CONF_SUFFIX);
+
+    /**
+     * registry.conf or registry-{env}.conf
+     */
+    public static final Configuration CURRENT_FILE_INSTANCE = (ENV_VALUE == null || DEFAULT_ENV_VALUE.equals(ENV_VALUE))
+            ? DEFAULT_FILE_INSTANCE : new FileConfiguration(REGISTRY_CONF_PREFIX + "-" + ENV_VALUE + REGISTRY_CONF_SUFFIX);
+
     private static final String NAME_KEY = "name";
     private static final String FILE_TYPE = "file";
 
@@ -66,27 +82,38 @@ public final class ConfigurationFactory {
                 }
             }
         }
+
         return CONFIG_INSTANCE;
     }
 
     private static Configuration buildConfiguration() {
-        ConfigType configType = null;
+        ConfigType configType;
         String configTypeName = null;
         try {
-            configTypeName = CURRENT_FILE_INSTANCE.getConfig(ConfigurationKeys.FILE_ROOT_CONFIG + ConfigurationKeys.FILE_CONFIG_SPLIT_CHAR
-                + ConfigurationKeys.FILE_ROOT_TYPE);
+            // config.type
+            configTypeName = CURRENT_FILE_INSTANCE.getConfig(ConfigurationKeys.FILE_ROOT_CONFIG
+                    + ConfigurationKeys.FILE_CONFIG_SPLIT_CHAR
+                    + ConfigurationKeys.FILE_ROOT_TYPE);
+
             configType = ConfigType.getType(configTypeName);
         } catch (Exception e) {
             throw new NotSupportYetException("not support register type: " + configTypeName, e);
         }
+
         if (ConfigType.File == configType) {
-            String pathDataId = ConfigurationKeys.FILE_ROOT_CONFIG + ConfigurationKeys.FILE_CONFIG_SPLIT_CHAR
-                + FILE_TYPE + ConfigurationKeys.FILE_CONFIG_SPLIT_CHAR
-                + NAME_KEY;
+            // config.file.name
+            String pathDataId = ConfigurationKeys.FILE_ROOT_CONFIG
+                    + ConfigurationKeys.FILE_CONFIG_SPLIT_CHAR
+                    + FILE_TYPE
+                    + ConfigurationKeys.FILE_CONFIG_SPLIT_CHAR
+                    + NAME_KEY;
+
             String name = CURRENT_FILE_INSTANCE.getConfig(pathDataId);
+
             return new FileConfiguration(name);
         } else {
             return EnhancedServiceLoader.load(ConfigurationProvider.class, Objects.requireNonNull(configType).name()).provide();
         }
     }
+
 }

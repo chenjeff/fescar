@@ -24,10 +24,12 @@ import java.nio.ByteBuffer;
  * @date 2018 /9/17
  */
 public interface MergedMessage {
+
     /**
      * Decode.
      *
      * @param byteBuffer the byte buffer
      */
     void decode(ByteBuffer byteBuffer);
+
 }

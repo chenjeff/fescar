@@ -65,6 +65,7 @@ public abstract class AbstractSessionManager implements SessionManager, SessionL
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("MANAGER[" + name + "] SESSION[" + session + "] " + LogOperation.GLOBAL_ADD);
         }
+
         writeSession(LogOperation.GLOBAL_ADD, session);
     }
 
@@ -73,6 +74,7 @@ public abstract class AbstractSessionManager implements SessionManager, SessionL
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("MANAGER[" + name + "] SESSION[" + session + "] " + LogOperation.GLOBAL_UPDATE);
         }
+
         writeSession(LogOperation.GLOBAL_UPDATE, session);
     }
 
@@ -81,6 +83,7 @@ public abstract class AbstractSessionManager implements SessionManager, SessionL
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("MANAGER[" + name + "] SESSION[" + session + "] " + LogOperation.GLOBAL_REMOVE);
         }
+
         writeSession(LogOperation.GLOBAL_REMOVE, session);
     }
 
@@ -89,24 +92,25 @@ public abstract class AbstractSessionManager implements SessionManager, SessionL
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("MANAGER[" + name + "] SESSION[" + branchSession + "] " + LogOperation.BRANCH_ADD);
         }
+
         writeSession(LogOperation.BRANCH_ADD, branchSession);
     }
 
     @Override
-    public void updateBranchSessionStatus(BranchSession branchSession, BranchStatus status)
-        throws TransactionException {
+    public void updateBranchSessionStatus(BranchSession branchSession, BranchStatus status) throws TransactionException {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("MANAGER[" + name + "] SESSION[" + branchSession + "] " + LogOperation.GLOBAL_ADD);
         }
+
         writeSession(LogOperation.BRANCH_UPDATE, branchSession);
     }
 
     @Override
-    public void removeBranchSession(GlobalSession globalSession, BranchSession branchSession)
-        throws TransactionException {
+    public void removeBranchSession(GlobalSession globalSession, BranchSession branchSession) throws TransactionException {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("MANAGER[" + name + "] SESSION[" + branchSession + "] " + LogOperation.GLOBAL_ADD);
         }
+
         writeSession(LogOperation.BRANCH_REMOVE, branchSession);
     }
 
@@ -122,7 +126,7 @@ public abstract class AbstractSessionManager implements SessionManager, SessionL
 
     @Override
     public void onBranchStatusChange(GlobalSession globalSession, BranchSession branchSession, BranchStatus status)
-        throws TransactionException {
+            throws TransactionException {
         updateBranchSessionStatus(branchSession, status);
     }
 
@@ -164,4 +168,5 @@ public abstract class AbstractSessionManager implements SessionManager, SessionL
     public void setTransactionStoreManager(TransactionStoreManager transactionStoreManager) {
         this.transactionStoreManager = transactionStoreManager;
     }
+
 }

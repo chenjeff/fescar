@@ -49,6 +49,7 @@ public class GlobalTransactionContext {
         if (xid == null) {
             return null;
         }
+
         return new DefaultGlobalTransaction(xid, GlobalStatus.Begin, GlobalTransactionRole.Participant);
     }
 
@@ -62,6 +63,7 @@ public class GlobalTransactionContext {
         if (tx == null) {
             return createNew();
         }
+
         return tx;
     }
 

@@ -35,7 +35,6 @@ public class TransactionalTemplate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionalTemplate.class);
 
-
     /**
      * Execute object.
      *
@@ -52,21 +51,18 @@ public class TransactionalTemplate {
         if (txInfo == null) {
             throw new ShouldNeverHappenException("transactionInfo does not exist");
         }
-        try {
 
+        try {
             // 2. begin transaction
             beginTransaction(txInfo, tx);
 
-            Object rs = null;
+            Object rs;
             try {
-
                 // Do Your Business
                 rs = business.execute();
-
             } catch (Throwable ex) {
-
                 // 3.the needed business exception to rollback.
-                completeTransactionAfterThrowing(txInfo,tx,ex);
+                completeTransactionAfterThrowing(txInfo, tx, ex);
                 throw ex;
             }
 
@@ -75,21 +71,22 @@ public class TransactionalTemplate {
 
             return rs;
         } finally {
-            //5. clear
+            // 5. completed & clear
             triggerAfterCompletion();
             cleanUp();
         }
     }
 
-    private void completeTransactionAfterThrowing(TransactionInfo txInfo, GlobalTransaction tx, Throwable ex) throws TransactionalExecutor.ExecutionException {
-        //roll back
+    private void completeTransactionAfterThrowing(TransactionInfo txInfo, GlobalTransaction tx, Throwable ex)
+            throws TransactionalExecutor.ExecutionException {
+
+        // roll back
         if (txInfo != null && txInfo.rollbackOn(ex)) {
             try {
                 rollbackTransaction(tx, ex);
             } catch (TransactionException txe) {
                 // Failed to rollback
-                throw new TransactionalExecutor.ExecutionException(tx, txe,
-                        TransactionalExecutor.Code.RollbackFailure, ex);
+                throw new TransactionalExecutor.ExecutionException(tx, txe, TransactionalExecutor.Code.RollbackFailure, ex);
             }
         } else {
             // not roll back on this exception, so commit
@@ -104,12 +101,12 @@ public class TransactionalTemplate {
             triggerAfterCommit();
         } catch (TransactionException txe) {
             // 4.1 Failed to commit
-            throw new TransactionalExecutor.ExecutionException(tx, txe,
-                TransactionalExecutor.Code.CommitFailure);
+            throw new TransactionalExecutor.ExecutionException(tx, txe, TransactionalExecutor.Code.CommitFailure);
         }
     }
 
-    private void rollbackTransaction(GlobalTransaction tx, Throwable ex) throws TransactionException, TransactionalExecutor.ExecutionException {
+    private void rollbackTransaction(GlobalTransaction tx, Throwable ex)
+            throws TransactionException, TransactionalExecutor.ExecutionException {
         triggerBeforeRollback();
         tx.rollback();
         triggerAfterRollback();
@@ -117,15 +114,14 @@ public class TransactionalTemplate {
         throw new TransactionalExecutor.ExecutionException(tx, TransactionalExecutor.Code.RollbackDone, ex);
     }
 
-    private void beginTransaction(TransactionInfo txInfo, GlobalTransaction tx) throws TransactionalExecutor.ExecutionException {
+    private void beginTransaction(TransactionInfo txInfo, GlobalTransaction tx)
+            throws TransactionalExecutor.ExecutionException {
         try {
             triggerBeforeBegin();
             tx.begin(txInfo.getTimeOut(), txInfo.getName());
             triggerAfterBegin();
         } catch (TransactionException txe) {
-            throw new TransactionalExecutor.ExecutionException(tx, txe,
-                TransactionalExecutor.Code.BeginFailure);
-
+            throw new TransactionalExecutor.ExecutionException(tx, txe, TransactionalExecutor.Code.BeginFailure);
         }
     }
 

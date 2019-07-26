@@ -51,4 +51,5 @@ public class DruidDataSourceGenerator extends AbstractDataSourceGenerator {
         ds.setDefaultAutoCommit(true);
         return ds;
     }
+
 }

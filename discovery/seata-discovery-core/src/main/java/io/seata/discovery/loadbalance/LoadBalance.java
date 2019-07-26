@@ -34,4 +34,5 @@ public interface LoadBalance {
      * @throws Exception the exception
      */
     <T> T select(List<T> invokers) throws Exception;
+
 }

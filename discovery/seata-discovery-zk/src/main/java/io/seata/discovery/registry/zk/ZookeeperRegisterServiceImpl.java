@@ -47,6 +47,7 @@ import static io.seata.common.Constants.IP_PORT_SPLIT_CHAR;
  * @date 2019/2/15
  */
 public class ZookeeperRegisterServiceImpl implements RegistryService<IZkChildListener> {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ZookeeperRegisterServiceImpl.class);
 
     private static volatile ZookeeperRegisterServiceImpl instance;
@@ -60,12 +61,21 @@ public class ZookeeperRegisterServiceImpl implements RegistryService<IZkChildLis
     private static final String SERVER_ADDR_KEY = "serverAddr";
     private static final String SESSION_TIME_OUT_KEY = "session.timeout";
     private static final String CONNECT_TIME_OUT_KEY = "connect.timeout";
-    private static final String FILE_CONFIG_KEY_PREFIX = FILE_ROOT_REGISTRY + FILE_CONFIG_SPLIT_CHAR + REGISTRY_TYPE
-        + FILE_CONFIG_SPLIT_CHAR;
-    private static final String ROOT_PATH = ZK_PATH_SPLIT_CHAR + FILE_ROOT_REGISTRY + ZK_PATH_SPLIT_CHAR + REGISTRY_TYPE
-        + ZK_PATH_SPLIT_CHAR;
-    private static final String ROOT_PATH_WITHOUT_SUFFIX = ZK_PATH_SPLIT_CHAR + FILE_ROOT_REGISTRY + ZK_PATH_SPLIT_CHAR
-        + REGISTRY_TYPE;
+
+    /**
+     * registry.zk.
+     */
+    private static final String FILE_CONFIG_KEY_PREFIX = FILE_ROOT_REGISTRY + FILE_CONFIG_SPLIT_CHAR + REGISTRY_TYPE + FILE_CONFIG_SPLIT_CHAR;
+
+    /**
+     * /registry/zk/
+     */
+    private static final String ROOT_PATH = ZK_PATH_SPLIT_CHAR + FILE_ROOT_REGISTRY + ZK_PATH_SPLIT_CHAR + REGISTRY_TYPE + ZK_PATH_SPLIT_CHAR;
+
+    /**
+     * /registry/zk
+     */
+    private static final String ROOT_PATH_WITHOUT_SUFFIX = ZK_PATH_SPLIT_CHAR + FILE_ROOT_REGISTRY + ZK_PATH_SPLIT_CHAR + REGISTRY_TYPE;
     private static final ConcurrentMap<String, List<InetSocketAddress>> CLUSTER_ADDRESS_MAP = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, List<IZkChildListener>> LISTENER_SERVICE_MAP = new ConcurrentHashMap<>();
 
@@ -83,6 +93,7 @@ public class ZookeeperRegisterServiceImpl implements RegistryService<IZkChildLis
                 }
             }
         }
+
         return instance;
     }
 
@@ -90,6 +101,9 @@ public class ZookeeperRegisterServiceImpl implements RegistryService<IZkChildLis
     public void register(InetSocketAddress address) throws Exception {
         NetUtil.validAddress(address);
 
+        /**
+         * /registry/zk/default/{ip}:{port}
+         */
         String path = getRegisterPathByPath(address);
         doRegister(path);
     }
@@ -98,6 +112,7 @@ public class ZookeeperRegisterServiceImpl implements RegistryService<IZkChildLis
         if (checkExists(path)) {
             return false;
         }
+
         createParentIfNotPresent(path);
         getClientInstance().createEphemeral(path, true);
         REGISTERED_PATH_SET.add(path);
@@ -113,7 +128,7 @@ public class ZookeeperRegisterServiceImpl implements RegistryService<IZkChildLis
             }
         }
     }
-    
+
     private boolean checkExists(String path) {
         return getClientInstance().exists(path);
     }
@@ -181,8 +196,15 @@ public class ZookeeperRegisterServiceImpl implements RegistryService<IZkChildLis
         return doLookup(clusterName);
     }
 
-    // visible for test.
+    /**
+     * visible for test.
+     *
+     * @param clusterName
+     * @return
+     * @throws Exception
+     */
     List<InetSocketAddress> doLookup(String clusterName) throws Exception {
+        // /registry/zk/{clusterName}
         boolean exist = getClientInstance().exists(ROOT_PATH + clusterName);
         if (!exist) {
             return null;
@@ -206,21 +228,34 @@ public class ZookeeperRegisterServiceImpl implements RegistryService<IZkChildLis
         if (zkClient == null) {
             synchronized (ZookeeperRegisterServiceImpl.class) {
                 if (null == zkClient) {
+                    // registry.zk.serverAddr
+                    // registry.zk.session.timeout
+                    // registry.zk.connect.timeout
                     zkClient = buildZkClient(FILE_CONFIG.getConfig(FILE_CONFIG_KEY_PREFIX + SERVER_ADDR_KEY),
                             FILE_CONFIG.getInt(FILE_CONFIG_KEY_PREFIX + SESSION_TIME_OUT_KEY),
                             FILE_CONFIG.getInt(FILE_CONFIG_KEY_PREFIX + CONNECT_TIME_OUT_KEY));
                 }
             }
         }
+
         return zkClient;
     }
-    
-    // visible for test.
+
+    /**
+     * visible for test.
+     *
+     * @param address
+     * @param sessionTimeout
+     * @param connectTimeout
+     * @return
+     */
     ZkClient buildZkClient(String address, int sessionTimeout, int connectTimeout) {
-        ZkClient zkClient = new ZkClient(address, sessionTimeout,connectTimeout);
+        ZkClient zkClient = new ZkClient(address, sessionTimeout, connectTimeout);
+        // /registry/zk
         if (!zkClient.exists(ROOT_PATH_WITHOUT_SUFFIX)) {
             zkClient.createPersistent(ROOT_PATH_WITHOUT_SUFFIX, true);
         }
+
         zkClient.subscribeStateChanges(new IZkStateListener() {
 
             @Override
@@ -238,6 +273,7 @@ public class ZookeeperRegisterServiceImpl implements RegistryService<IZkChildLis
                 //ignore
             }
         });
+
         return zkClient;
     }
 
@@ -281,6 +317,7 @@ public class ZookeeperRegisterServiceImpl implements RegistryService<IZkChildLis
             CLUSTER_ADDRESS_MAP.put(clusterName, newAddressList);
             return;
         }
+
         for (String path : instances) {
             try {
                 String[] ipAndPort = path.split(IP_PORT_SPLIT_CHAR);
@@ -289,22 +326,36 @@ public class ZookeeperRegisterServiceImpl implements RegistryService<IZkChildLis
                 LOGGER.warn("The cluster instance info is error, instance info:{}", path);
             }
         }
+
         CLUSTER_ADDRESS_MAP.put(clusterName, newAddressList);
     }
 
     private String getClusterName() {
+        /**
+         * registry.zk.cluster
+         */
         String clusterConfigName = FILE_ROOT_REGISTRY + FILE_CONFIG_SPLIT_CHAR + REGISTRY_TYPE + FILE_CONFIG_SPLIT_CHAR
-            + REGISTRY_CLUSTER;
+                + REGISTRY_CLUSTER;
+        /**
+         * default-value: {cluster:default}
+         */
         return FILE_CONFIG.getConfig(clusterConfigName);
     }
 
     private String getServiceGroup(String key) {
         Configuration configuration = ConfigurationFactory.getInstance();
+        /**
+         * service.vgroup_mapping.{key}
+         */
         String clusterNameKey = PREFIX_SERVICE_ROOT + CONFIG_SPLIT_CHAR + PREFIX_SERVICE_MAPPING + key;
         return configuration.getConfig(clusterNameKey);
     }
 
     private String getRegisterPathByPath(InetSocketAddress address) {
+        /**
+         * /registry/zk/{cluster:default}/{ip}:{port}
+         */
         return ROOT_PATH + getClusterName() + ZK_PATH_SPLIT_CHAR + NetUtil.toStringAddress(address);
     }
+
 }

@@ -48,8 +48,11 @@ public interface ServerMessageListener {
      * @param sender           the sender
      * @param checkAuthHandler the check auth handler
      */
-    void onRegRmMessage(long msgId, ChannelHandlerContext ctx, RegisterRMRequest message,
-                        ServerMessageSender sender, RegisterCheckAuthHandler checkAuthHandler);
+    void onRegRmMessage(long msgId,
+                        ChannelHandlerContext ctx,
+                        RegisterRMRequest message,
+                        ServerMessageSender sender,
+                        RegisterCheckAuthHandler checkAuthHandler);
 
     /**
      * On reg tm message.
@@ -60,8 +63,11 @@ public interface ServerMessageListener {
      * @param sender           the sender
      * @param checkAuthHandler the check auth handler
      */
-    void onRegTmMessage(long msgId, ChannelHandlerContext ctx, RegisterTMRequest message,
-                        ServerMessageSender sender, RegisterCheckAuthHandler checkAuthHandler);
+    void onRegTmMessage(long msgId,
+                        ChannelHandlerContext ctx,
+                        RegisterTMRequest message,
+                        ServerMessageSender sender,
+                        RegisterCheckAuthHandler checkAuthHandler);
 
     /**
      * On check message.

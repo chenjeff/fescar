@@ -58,7 +58,7 @@ public class TCCResourceManager extends AbstractResourceManager {
      */
     @Override
     public void registerResource(Resource resource) {
-        TCCResource tccResource = (TCCResource)resource;
+        TCCResource tccResource = (TCCResource) resource;
         tccResourceCache.put(tccResource.getResourceId(), tccResource);
         super.registerResource(tccResource);
     }
@@ -80,31 +80,38 @@ public class TCCResourceManager extends AbstractResourceManager {
      * @throws TransactionException
      */
     @Override
-    public BranchStatus branchCommit(BranchType branchType, String xid, long branchId, String resourceId,
+    public BranchStatus branchCommit(BranchType branchType,
+                                     String xid,
+                                     long branchId,
+                                     String resourceId,
                                      String applicationData) throws TransactionException {
-        TCCResource tccResource = (TCCResource)tccResourceCache.get(resourceId);
+
+        TCCResource tccResource = (TCCResource) tccResourceCache.get(resourceId);
         if (tccResource == null) {
             throw new ShouldNeverHappenException("TCC resource is not exist, resourceId:" + resourceId);
         }
+
         Object targetTCCBean = tccResource.getTargetBean();
         Method commitMethod = tccResource.getCommitMethod();
         if (targetTCCBean == null || commitMethod == null) {
             throw new ShouldNeverHappenException("TCC resource is not available, resourceId:" + resourceId);
         }
+
         try {
             boolean result = false;
             //BusinessActionContext
-            BusinessActionContext businessActionContext = getBusinessActionContext(xid, branchId, resourceId,
-                applicationData);
+            BusinessActionContext businessActionContext = getBusinessActionContext(xid, branchId, resourceId, applicationData);
             Object ret = commitMethod.invoke(targetTCCBean, businessActionContext);
-            LOGGER.info(
-                "TCC resource commit result :" + ret + ", xid:" + xid + ", branchId:" + branchId + ", resourceId:"
-                    + resourceId);
+            LOGGER.info("TCC resource commit result :" + ret
+                    + ", xid:" + xid
+                    + ", branchId:" + branchId
+                    + ", resourceId:" + resourceId);
+
             if (ret != null) {
                 if (ret instanceof TwoPhaseResult) {
-                    result = ((TwoPhaseResult)ret).isSuccess();
+                    result = ((TwoPhaseResult) ret).isSuccess();
                 } else {
-                    result = (boolean)ret;
+                    result = (boolean) ret;
                 }
             }
             return result ? BranchStatus.PhaseTwo_Committed : BranchStatus.PhaseTwo_CommitFailed_Retryable;
@@ -127,31 +134,38 @@ public class TCCResourceManager extends AbstractResourceManager {
      * @throws TransactionException
      */
     @Override
-    public BranchStatus branchRollback(BranchType branchType, String xid, long branchId, String resourceId,
+    public BranchStatus branchRollback(BranchType branchType,
+                                       String xid,
+                                       long branchId,
+                                       String resourceId,
                                        String applicationData) throws TransactionException {
-        TCCResource tccResource = (TCCResource)tccResourceCache.get(resourceId);
+
+        TCCResource tccResource = (TCCResource) tccResourceCache.get(resourceId);
         if (tccResource == null) {
             throw new ShouldNeverHappenException("TCC resource is not exist, resourceId:" + resourceId);
         }
+
         Object targetTCCBean = tccResource.getTargetBean();
         Method rollbackMethod = tccResource.getRollbackMethod();
         if (targetTCCBean == null || rollbackMethod == null) {
             throw new ShouldNeverHappenException("TCC resource is not available, resourceId:" + resourceId);
         }
+
         try {
             boolean result = false;
             //BusinessActionContext
-            BusinessActionContext businessActionContext = getBusinessActionContext(xid, branchId, resourceId,
-                applicationData);
+            BusinessActionContext businessActionContext = getBusinessActionContext(xid, branchId, resourceId, applicationData);
             Object ret = rollbackMethod.invoke(targetTCCBean, businessActionContext);
-            LOGGER.info(
-                "TCC resource rollback result :" + ret + ", xid:" + xid + ", branchId:" + branchId + ", resourceId:"
-                    + resourceId);
+            LOGGER.info("TCC resource rollback result :" + ret
+                    + ", xid:" + xid
+                    + ", branchId:" + branchId
+                    + ", resourceId:" + resourceId);
+
             if (ret != null) {
                 if (ret instanceof TwoPhaseResult) {
-                    result = ((TwoPhaseResult)ret).isSuccess();
+                    result = ((TwoPhaseResult) ret).isSuccess();
                 } else {
-                    result = (boolean)ret;
+                    result = (boolean) ret;
                 }
             }
             return result ? BranchStatus.PhaseTwo_Rollbacked : BranchStatus.PhaseTwo_RollbackFailed_Retryable;
@@ -171,14 +185,17 @@ public class TCCResourceManager extends AbstractResourceManager {
      * @param applicationData the application data
      * @return business action context
      */
-    protected BusinessActionContext getBusinessActionContext(String xid, long branchId, String resourceId,
+    protected BusinessActionContext getBusinessActionContext(String xid,
+                                                             long branchId,
+                                                             String resourceId,
                                                              String applicationData) {
-        //transfer tcc applicationData to Context
-        Map tccContext = StringUtils.isBlank(applicationData) ? new HashMap() : (Map)JSON.parse(applicationData);
-        Map actionContextMap = (Map)tccContext.get(Constants.TCC_ACTION_CONTEXT);
-        BusinessActionContext businessActionContext = new BusinessActionContext(
-            xid, String.valueOf(branchId), actionContextMap);
+        // transfer tcc applicationData to Context
+        Map tccContext = StringUtils.isBlank(applicationData) ? new HashMap() : (Map) JSON.parse(applicationData);
+        Map actionContextMap = (Map) tccContext.get(Constants.TCC_ACTION_CONTEXT);
+
+        BusinessActionContext businessActionContext = new BusinessActionContext(xid, String.valueOf(branchId), actionContextMap);
         businessActionContext.setActionName(resourceId);
+
         return businessActionContext;
     }
 

@@ -82,12 +82,25 @@ public class FileConfiguration extends AbstractConfiguration<ConfigChangeListene
         } else {
             CONFIG = ConfigFactory.load(name);
         }
-        configOperateExecutor = new ThreadPoolExecutor(CORE_CONFIG_OPERATE_THREAD, MAX_CONFIG_OPERATE_THREAD,
-            Integer.MAX_VALUE, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
-            new NamedThreadFactory("configOperate", MAX_CONFIG_OPERATE_THREAD));
-        configChangeExecutor = new ThreadPoolExecutor(CORE_CONFIG_CHANGE_THREAD, CORE_CONFIG_CHANGE_THREAD,
-            Integer.MAX_VALUE, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
-            new NamedThreadFactory("configChange", CORE_CONFIG_CHANGE_THREAD));
+
+        configOperateExecutor = new ThreadPoolExecutor(
+                CORE_CONFIG_OPERATE_THREAD,
+                MAX_CONFIG_OPERATE_THREAD,
+                Integer.MAX_VALUE,
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>(),
+                new NamedThreadFactory("configOperate", MAX_CONFIG_OPERATE_THREAD)
+        );
+
+        configChangeExecutor = new ThreadPoolExecutor(
+                CORE_CONFIG_CHANGE_THREAD,
+                CORE_CONFIG_CHANGE_THREAD,
+                Integer.MAX_VALUE,
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>(),
+                new NamedThreadFactory("configChange", CORE_CONFIG_CHANGE_THREAD)
+        );
+
         configChangeExecutor.submit(new ConfigChangeRunnable());
     }
 
@@ -136,20 +149,22 @@ public class FileConfiguration extends AbstractConfiguration<ConfigChangeListene
         if (configChangeListeners == null) {
             return;
         }
+
         List<ConfigChangeListener> newChangeListenerList = new ArrayList<>();
         for (ConfigChangeListener changeListener : configChangeListeners) {
             if (!changeListener.equals(listener)) {
                 newChangeListenerList.add(changeListener);
             }
         }
+
         configListenersMap.put(dataId, newChangeListenerList);
         if (newChangeListenerList.isEmpty()) {
             listenedConfigMap.remove(dataId);
         }
+
         if (null != listener.getExecutor()) {
             listener.getExecutor().shutdownNow();
         }
-
     }
 
     @Override
@@ -199,7 +214,7 @@ public class FileConfiguration extends AbstractConfiguration<ConfigChangeListene
                         //todo
                         configFuture.setResult(Boolean.TRUE);
                     }
-                } catch (Exception e){
+                } catch (Exception e) {
                     setFailResult(configFuture);
                     LOGGER.warn("Could not found property {}, try to use default value instead.", configFuture.getDataId());
                 }
@@ -214,7 +229,6 @@ public class FileConfiguration extends AbstractConfiguration<ConfigChangeListene
                 configFuture.setResult(Boolean.FALSE);
             }
         }
-
     }
 
     /**
@@ -290,7 +304,6 @@ public class FileConfiguration extends AbstractConfiguration<ConfigChangeListene
                 configChangeListener.receiveConfigInfo(listenedConfigMap.get(dataId));
             }
         }
-
     }
 
 }

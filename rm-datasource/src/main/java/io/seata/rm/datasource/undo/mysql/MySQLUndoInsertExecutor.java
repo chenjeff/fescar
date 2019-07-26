@@ -52,19 +52,20 @@ public class MySQLUndoInsertExecutor extends AbstractUndoExecutor {
         KeywordChecker keywordChecker = KeywordCheckerFactory.getKeywordChecker(JdbcConstants.MYSQL);
         TableRecords afterImage = sqlUndoLog.getAfterImage();
         List<Row> afterImageRows = afterImage.getRows();
+
         if (afterImageRows == null || afterImageRows.size() == 0) {
             throw new ShouldNeverHappenException("Invalid UNDO LOG");
         }
+
         Row row = afterImageRows.get(0);
         Field pkField = row.primaryKeys().get(0);
-        return String.format(DELETE_SQL_TEMPLATE,
-                             keywordChecker.checkAndReplace(sqlUndoLog.getTableName()),
-                             keywordChecker.checkAndReplace(pkField.getName()));
+
+        // DELETE FROM {tableName} WHERE {pk} = ?
+        return String.format(DELETE_SQL_TEMPLATE, keywordChecker.checkAndReplace(sqlUndoLog.getTableName()), keywordChecker.checkAndReplace(pkField.getName()));
     }
 
     @Override
-    protected void undoPrepare(PreparedStatement undoPST, ArrayList<Field> undoValues, Field pkValue)
-        throws SQLException {
+    protected void undoPrepare(PreparedStatement undoPST, ArrayList<Field> undoValues, Field pkValue) throws SQLException {
         undoPST.setObject(1, pkValue.getValue(), pkValue.getType());
     }
 
@@ -81,4 +82,5 @@ public class MySQLUndoInsertExecutor extends AbstractUndoExecutor {
     protected TableRecords getUndoRows() {
         return sqlUndoLog.getAfterImage();
     }
+
 }

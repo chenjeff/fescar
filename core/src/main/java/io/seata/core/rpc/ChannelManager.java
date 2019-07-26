@@ -44,22 +44,21 @@ import org.slf4j.LoggerFactory;
 public class ChannelManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ChannelManager.class);
-    private static final ConcurrentMap<Channel, RpcContext> IDENTIFIED_CHANNELS
-        = new ConcurrentHashMap<Channel, RpcContext>();
+
+    private static final ConcurrentMap<Channel, RpcContext> IDENTIFIED_CHANNELS = new ConcurrentHashMap<Channel, RpcContext>();
 
     /**
      * resourceId -> applicationId -> ip -> port -> RpcContext
      */
     private static final ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<Integer,
-        RpcContext>>>>
-        RM_CHANNELS = new ConcurrentHashMap<String, ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<Integer,
-        RpcContext>>>>();
+            RpcContext>>>> RM_CHANNELS = new ConcurrentHashMap<String, ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<Integer,
+            RpcContext>>>>();
 
     /**
      * ip+appname,port
      */
     private static final ConcurrentMap<String, ConcurrentMap<Integer, RpcContext>> TM_CHANNELS
-        = new ConcurrentHashMap<String, ConcurrentMap<Integer, RpcContext>>();
+            = new ConcurrentHashMap<String, ConcurrentMap<Integer, RpcContext>>();
 
     /**
      * Is registered boolean.
@@ -102,9 +101,14 @@ public class ChannelManager {
         return clientId.split(Constants.CLIENT_ID_SPLIT_CHAR);
     }
 
-    private static RpcContext buildChannelHolder(NettyPoolKey.TransactionRole clientRole, String version, String applicationId,
-                                                 String txServiceGroup, String dbkeys, Channel channel) {
+    private static RpcContext buildChannelHolder(NettyPoolKey.TransactionRole clientRole,
+                                                 String version,
+                                                 String applicationId,
+                                                 String txServiceGroup,
+                                                 String dbkeys,
+                                                 Channel channel) {
         RpcContext holder = new RpcContext();
+
         holder.setClientRole(clientRole);
         holder.setVersion(version);
         holder.setClientId(buildClientId(applicationId, channel));
@@ -112,6 +116,7 @@ public class ChannelManager {
         holder.setTransactionServiceGroup(txServiceGroup);
         holder.addResources(dbKeytoSet(dbkeys));
         holder.setChannel(channel);
+
         return holder;
     }
 
@@ -122,18 +127,21 @@ public class ChannelManager {
      * @param channel the channel
      * @throws IncompatibleVersionException the incompatible version exception
      */
-    public static void registerTMChannel(RegisterTMRequest request, Channel channel)
-        throws IncompatibleVersionException {
+    public static void registerTMChannel(RegisterTMRequest request, Channel channel) throws IncompatibleVersionException {
         Version.checkVersion(request.getVersion());
-        RpcContext rpcContext = buildChannelHolder(NettyPoolKey.TransactionRole.TMROLE, request.getVersion(),
-            request.getApplicationId(),
-            request.getTransactionServiceGroup(),
-            null, channel);
+        RpcContext rpcContext = buildChannelHolder(NettyPoolKey.TransactionRole.TMROLE,
+                request.getVersion(),
+                request.getApplicationId(),
+                request.getTransactionServiceGroup(),
+                null,
+                channel);
         rpcContext.holdInIdentifiedChannels(IDENTIFIED_CHANNELS);
-        String clientIdentified = rpcContext.getApplicationId() + Constants.CLIENT_ID_SPLIT_CHAR
-            + getClientIpFromChannel(channel);
+
+        // {application-id}:{ip-address}
+        String clientIdentified = rpcContext.getApplicationId() + Constants.CLIENT_ID_SPLIT_CHAR + getClientIpFromChannel(channel);
         TM_CHANNELS.putIfAbsent(clientIdentified, new ConcurrentHashMap<Integer, RpcContext>());
         ConcurrentMap<Integer, RpcContext> clientIdentifiedMap = TM_CHANNELS.get(clientIdentified);
+
         rpcContext.holdInClientChannels(clientIdentifiedMap);
     }
 
@@ -144,53 +152,77 @@ public class ChannelManager {
      * @param channel                the channel
      * @throws IncompatibleVersionException the incompatible  version exception
      */
-    public static void registerRMChannel(RegisterRMRequest resourceManagerRequest, Channel channel)
-        throws IncompatibleVersionException {
+    public static void registerRMChannel(RegisterRMRequest resourceManagerRequest, Channel channel) throws IncompatibleVersionException {
         Version.checkVersion(resourceManagerRequest.getVersion());
         Set<String> dbkeySet = dbKeytoSet(resourceManagerRequest.getResourceIds());
         RpcContext rpcContext;
         if (!IDENTIFIED_CHANNELS.containsKey(channel)) {
-            rpcContext = buildChannelHolder(NettyPoolKey.TransactionRole.RMROLE, resourceManagerRequest.getVersion(),
-                resourceManagerRequest.getApplicationId(), resourceManagerRequest.getTransactionServiceGroup(),
-                resourceManagerRequest.getResourceIds(), channel);
+            rpcContext = buildChannelHolder(NettyPoolKey.TransactionRole.RMROLE,
+                    resourceManagerRequest.getVersion(),
+                    resourceManagerRequest.getApplicationId(),
+                    resourceManagerRequest.getTransactionServiceGroup(),
+                    resourceManagerRequest.getResourceIds(),
+                    channel);
             rpcContext.holdInIdentifiedChannels(IDENTIFIED_CHANNELS);
         } else {
             rpcContext = IDENTIFIED_CHANNELS.get(channel);
             rpcContext.addResources(dbkeySet);
         }
-        if (null == dbkeySet || dbkeySet.isEmpty()) { return; }
-        for (String resourceId : dbkeySet) {
-            RM_CHANNELS.putIfAbsent(resourceId,
-                new ConcurrentHashMap<String, ConcurrentMap<String, ConcurrentMap<Integer, RpcContext>>>());
-            ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<Integer, RpcContext>>> applicationIdMap
-                = RM_CHANNELS.get(resourceId);
-            applicationIdMap.putIfAbsent(resourceManagerRequest.getApplicationId(),
-                new ConcurrentHashMap<String, ConcurrentMap<Integer, RpcContext>>());
-            ConcurrentMap<String, ConcurrentMap<Integer, RpcContext>> clientIpMap = applicationIdMap.get(
-                resourceManagerRequest.getApplicationId());
-            String clientIp = getClientIpFromChannel(channel);
-            clientIpMap.putIfAbsent(clientIp, new ConcurrentHashMap<Integer, RpcContext>());
-            ConcurrentMap<Integer, RpcContext> portMap = clientIpMap.get(clientIp);
-            rpcContext.holdInResourceManagerChannels(resourceId, portMap);
-            updateChannelsResource(resourceId, clientIp, resourceManagerRequest.getApplicationId());
+
+        if (null == dbkeySet || dbkeySet.isEmpty()) {
+            return;
         }
 
+        for (String resourceId : dbkeySet) {
+            RM_CHANNELS.putIfAbsent(resourceId, new ConcurrentHashMap<String, ConcurrentMap<String, ConcurrentMap<Integer, RpcContext>>>());
+            ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<Integer, RpcContext>>> applicationIdMap = RM_CHANNELS.get(resourceId);
+            applicationIdMap.putIfAbsent(resourceManagerRequest.getApplicationId(), new ConcurrentHashMap<String, ConcurrentMap<Integer, RpcContext>>());
+            ConcurrentMap<String, ConcurrentMap<Integer, RpcContext>> clientIpMap = applicationIdMap.get(resourceManagerRequest.getApplicationId());
+
+            String clientIp = getClientIpFromChannel(channel);
+            clientIpMap.putIfAbsent(clientIp, new ConcurrentHashMap<Integer, RpcContext>());
+
+            ConcurrentMap<Integer, RpcContext> portMap = clientIpMap.get(clientIp);
+            rpcContext.holdInResourceManagerChannels(resourceId, portMap);
+
+            updateChannelsResource(resourceId, clientIp, resourceManagerRequest.getApplicationId());
+        }
     }
 
+    /**
+     * 配置信息{resourceId: jdbc-url}出现不一致时: {补偿方法}
+     * 解决配置文件内{resourceId: jdbc-url},出现不一致时,获取不到RpcContext信息
+     *
+     * @param resourceId
+     * @param clientIp
+     * @param applicationId
+     */
     private static void updateChannelsResource(String resourceId, String clientIp, String applicationId) {
         ConcurrentMap<Integer, RpcContext> sourcePortMap = RM_CHANNELS.get(resourceId).get(applicationId).get(clientIp);
-        for (ConcurrentMap.Entry<String, ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<Integer,
-            RpcContext>>>> rmChannelEntry : RM_CHANNELS.entrySet()) {
-            if (rmChannelEntry.getKey().equals(resourceId)) { continue; }
-            ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<Integer,
-                RpcContext>>> applicationIdMap = rmChannelEntry.getValue();
-            if (!applicationIdMap.containsKey(applicationId)) { continue; }
-            ConcurrentMap<String, ConcurrentMap<Integer,
-                RpcContext>> clientIpMap = applicationIdMap.get(applicationId);
-            if (!clientIpMap.containsKey(clientIp)) { continue; }
+        for (ConcurrentMap.Entry<String, ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<Integer, RpcContext>>>>
+                rmChannelEntry : RM_CHANNELS.entrySet()) {
+            // 不同 resourceId
+            if (rmChannelEntry.getKey().equals(resourceId)) {
+                continue;
+            }
+
+            ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<Integer, RpcContext>>>
+                    applicationIdMap = rmChannelEntry.getValue();
+            // 相同 applicationId
+            if (!applicationIdMap.containsKey(applicationId)) {
+                continue;
+            }
+
+            ConcurrentMap<String, ConcurrentMap<Integer, RpcContext>> clientIpMap = applicationIdMap.get(applicationId);
+            // 相同 clientIp
+            if (!clientIpMap.containsKey(clientIp)) {
+                continue;
+            }
+
             ConcurrentMap<Integer, RpcContext> portMap = clientIpMap.get(clientIp);
             for (ConcurrentMap.Entry<Integer, RpcContext> portMapEntry : portMap.entrySet()) {
                 Integer port = portMapEntry.getKey();
+                // 不存在 port 则: 绑定
                 if (!sourcePortMap.containsKey(port)) {
                     RpcContext rpcContext = portMapEntry.getValue();
                     sourcePortMap.put(port, rpcContext);
@@ -200,21 +232,30 @@ public class ChannelManager {
         }
     }
 
+    /**
+     * {ip-address}:{port}
+     *
+     * @param channel
+     * @return {ip-address}:{port}
+     */
     private static String getAddressFromChannel(Channel channel) {
         SocketAddress socketAddress = channel.remoteAddress();
         String address = socketAddress.toString();
         if (socketAddress.toString().indexOf(Constants.ENDPOINT_BEGIN_CHAR) == 0) {
             address = socketAddress.toString().substring(Constants.ENDPOINT_BEGIN_CHAR.length());
         }
+
         return address;
     }
 
     private static String getClientIpFromChannel(Channel channel) {
         String address = getAddressFromChannel(channel);
         String clientIp = address;
+
         if (clientIp.contains(Constants.IP_PORT_SPLIT_CHAR)) {
             clientIp = clientIp.substring(0, clientIp.lastIndexOf(Constants.IP_PORT_SPLIT_CHAR));
         }
+
         return clientIp;
     }
 
@@ -228,6 +269,7 @@ public class ChannelManager {
         } catch (NumberFormatException exx) {
             LOGGER.error(exx.getMessage());
         }
+
         return port;
     }
 
@@ -277,7 +319,7 @@ public class ChannelManager {
         NettyPoolKey.TransactionRole clientRole = rpcContext.getClientRole();
         if (clientRole == NettyPoolKey.TransactionRole.TMROLE) {
             String clientIdentified = rpcContext.getApplicationId() + Constants.CLIENT_ID_SPLIT_CHAR
-                + getClientIpFromChannel(channel);
+                    + getClientIpFromChannel(channel);
             if (!TM_CHANNELS.containsKey(clientIdentified)) {
                 return null;
             }
@@ -303,7 +345,9 @@ public class ChannelManager {
                     continue;
                 }
                 Channel channel = entry.getValue().getChannel();
-                if (channel.isActive()) { return channel; }
+                if (channel.isActive()) {
+                    return channel;
+                }
                 clientChannelMap.remove(entry.getKey());
             }
         }
@@ -331,9 +375,9 @@ public class ChannelManager {
         int targetPort = Integer.parseInt(clientIdInfo[2]);
 
         ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<Integer,
-            RpcContext>>> applicationIdMap = RM_CHANNELS.get(resourceId);
+                RpcContext>>> applicationIdMap = RM_CHANNELS.get(resourceId);
 
-        if (targetApplicationId == null || applicationIdMap == null ||  applicationIdMap.isEmpty()) {
+        if (targetApplicationId == null || applicationIdMap == null || applicationIdMap.isEmpty()) {
             if (LOGGER.isInfoEnabled()) {
                 LOGGER.info("No channel is available for resource[" + resourceId + "]");
             }
@@ -368,20 +412,19 @@ public class ChannelManager {
                 // The original channel was broken, try another one.
                 if (resultChannel == null) {
                     for (ConcurrentMap.Entry<Integer, RpcContext> portMapOnTargetIPEntry : portMapOnTargetIP
-                        .entrySet()) {
+                            .entrySet()) {
                         Channel channel = portMapOnTargetIPEntry.getValue().getChannel();
 
                         if (channel.isActive()) {
                             resultChannel = channel;
                             if (LOGGER.isInfoEnabled()) {
-                                LOGGER.info(
-                                    "Choose " + channel + " on the same IP[" + targetIP + "]  as alternative of "
-                                        + clientId);
+                                LOGGER.info("Choose " + channel + " on the same IP["
+                                        + targetIP + "]  as alternative of " + clientId);
                             }
                             break;
                         } else {
                             if (portMapOnTargetIP.remove(portMapOnTargetIPEntry.getKey(),
-                                portMapOnTargetIPEntry.getValue())) {
+                                    portMapOnTargetIPEntry.getValue())) {
                                 if (LOGGER.isInfoEnabled()) {
                                     LOGGER.info("Removed inactive " + channel);
                                 }
@@ -394,8 +437,10 @@ public class ChannelManager {
             // No channel on the this app node, try another one.
             if (resultChannel == null) {
                 for (ConcurrentMap.Entry<String, ConcurrentMap<Integer, RpcContext>> ipMapEntry : ipMap
-                    .entrySet()) {
-                    if (ipMapEntry.getKey().equals(targetIP)) { continue; }
+                        .entrySet()) {
+                    if (ipMapEntry.getKey().equals(targetIP)) {
+                        continue;
+                    }
 
                     ConcurrentMap<Integer, RpcContext> portMapOnOtherIP = ipMapEntry.getValue();
                     if (portMapOnOtherIP == null || portMapOnOtherIP.isEmpty()) {
@@ -408,21 +453,22 @@ public class ChannelManager {
                         if (channel.isActive()) {
                             resultChannel = channel;
                             if (LOGGER.isInfoEnabled()) {
-                                LOGGER.info("Choose " + channel + " on the same application[" + targetApplicationId
-                                    + "] as alternative of "
-                                    + clientId);
+                                LOGGER.info("Choose " + channel + " on the same application["
+                                        + targetApplicationId + "] as alternative of " + clientId);
                             }
                             break;
                         } else {
                             if (portMapOnOtherIP.remove(portMapOnOtherIPEntry.getKey(),
-                                portMapOnOtherIPEntry.getValue())) {
+                                    portMapOnOtherIPEntry.getValue())) {
                                 if (LOGGER.isInfoEnabled()) {
                                     LOGGER.info("Removed inactive " + channel);
                                 }
                             }
                         }
                     }
-                    if (resultChannel != null) { break; }
+                    if (resultChannel != null) {
+                        break;
+                    }
                 }
             }
         }
@@ -432,15 +478,12 @@ public class ChannelManager {
 
             if (resultChannel == null) {
                 if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info("No channel is available for resource[" + resourceId
-                        + "]  as alternative of "
-                        + clientId);
+                    LOGGER.info("No channel is available for resource[" + resourceId + "]  as alternative of " + clientId);
                 }
             } else {
                 if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info("Choose " + resultChannel + " on the same resource[" + resourceId
-                        + "]  as alternative of "
-                        + clientId);
+                    LOGGER.info("Choose " + resultChannel + " on the same resource["
+                            + resourceId + "]  as alternative of " + clientId);
                 }
             }
         }
@@ -450,10 +493,10 @@ public class ChannelManager {
     }
 
     private static Channel tryOtherApp(ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<Integer,
-        RpcContext>>> applicationIdMap, String myApplicationId) {
+            RpcContext>>> applicationIdMap, String myApplicationId) {
         Channel chosenChannel = null;
         for (ConcurrentMap.Entry<String, ConcurrentMap<String, ConcurrentMap<Integer, RpcContext>>> applicationIdMapEntry : applicationIdMap
-            .entrySet()) {
+                .entrySet()) {
             if (applicationIdMapEntry.getKey().equals(myApplicationId)) {
                 continue;
             }
@@ -464,7 +507,7 @@ public class ChannelManager {
             }
 
             for (ConcurrentMap.Entry<String, ConcurrentMap<Integer, RpcContext>> targetIPMapEntry : targetIPMap
-                .entrySet()) {
+                    .entrySet()) {
                 ConcurrentMap<Integer, RpcContext> portMap = targetIPMapEntry.getValue();
                 if (portMap == null || portMap.isEmpty()) {
                     continue;
@@ -483,9 +526,13 @@ public class ChannelManager {
                         }
                     }
                 }
-                if (chosenChannel != null) { break; }
+                if (chosenChannel != null) {
+                    break;
+                }
             }
-            if (chosenChannel != null) { break; }
+            if (chosenChannel != null) {
+                break;
+            }
         }
         return chosenChannel;
 

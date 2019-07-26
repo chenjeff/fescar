@@ -39,4 +39,5 @@ public abstract class AbstractTransactionRequest extends AbstractMessage {
      * @return the abstract transaction response
      */
     public abstract AbstractTransactionResponse handle(RpcContext rpcContext);
+
 }

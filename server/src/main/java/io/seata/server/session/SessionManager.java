@@ -44,7 +44,7 @@ public interface SessionManager extends SessionLifecycleListener, Disposable {
      * @param xid the xid
      * @return the global session
      */
-    GlobalSession findGlobalSession(String xid) ;
+    GlobalSession findGlobalSession(String xid);
 
     /**
      * Update global session status.

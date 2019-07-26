@@ -39,6 +39,6 @@ public class KeywordCheckerFactory {
         } else {
             throw new NotSupportYetException(dbType);
         }
-
     }
+
 }

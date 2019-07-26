@@ -117,4 +117,5 @@ public class DataSourceProxy extends AbstractDataSourceProxy implements Resource
     public BranchType getBranchType() {
         return BranchType.AT;
     }
+
 }

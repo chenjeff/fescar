@@ -59,18 +59,18 @@ public class NettyServerConfig extends NettyBaseConfig {
      * The constant DIRECT_BYTE_BUF_ALLOCATOR.
      */
     public static final PooledByteBufAllocator DIRECT_BYTE_BUF_ALLOCATOR =
-        new PooledByteBufAllocator(
-            true,
-            WORKER_THREAD_SIZE,
-            WORKER_THREAD_SIZE,
-            2048 * 64,
-            10,
-            512,
-            256,
-            64,
-            true,
-            0
-        );
+            new PooledByteBufAllocator(
+                    true,
+                    WORKER_THREAD_SIZE,
+                    WORKER_THREAD_SIZE,
+                    2048 * 64,
+                    10,
+                    512,
+                    256,
+                    64,
+                    true,
+                    0
+            );
 
     /**
      * Gets server selector threads.
@@ -97,7 +97,7 @@ public class NettyServerConfig extends NettyBaseConfig {
      */
     public static boolean enableEpoll() {
         return NettyBaseConfig.SERVER_CHANNEL_CLAZZ.equals(EpollServerSocketChannel.class)
-            && Epoll.isAvailable();
+                && Epoll.isAvailable();
 
     }
 
@@ -279,7 +279,7 @@ public class NettyServerConfig extends NettyBaseConfig {
      */
     public String getWorkerThreadPrefix() {
         return CONFIG.getConfig("transport.thread-factory.worker-thread-prefix",
-            enableEpoll() ? EPOLL_WORKER_THREAD_PREFIX : NIO_WORKER_THREAD_PREFIX);
+                enableEpoll() ? EPOLL_WORKER_THREAD_PREFIX : NIO_WORKER_THREAD_PREFIX);
     }
 
     /**
@@ -289,7 +289,7 @@ public class NettyServerConfig extends NettyBaseConfig {
      */
     public String getExecutorThreadPrefix() {
         return CONFIG.getConfig("transport.thread-factory.server-executor-thread-prefix",
-            DEFAULT_EXECUTOR_THREAD_PREFIX);
+                DEFAULT_EXECUTOR_THREAD_PREFIX);
     }
 
     /**
@@ -309,4 +309,5 @@ public class NettyServerConfig extends NettyBaseConfig {
     public int getServerShutdownWaitTime() {
         return CONFIG.getInt("transport.shutdown.wait", DEFAULT_SHUTDOWN_TIMEOUT_SEC);
     }
+
 }

@@ -22,6 +22,7 @@ package io.seata.core.rpc;
  * @date 2018 /10/10
  */
 public interface ClientMessageListener {
+
     /**
      * On message.
      *
@@ -31,4 +32,5 @@ public interface ClientMessageListener {
      * @param sender        the sender
      */
     void onMessage(long msgId, String serverAddress, Object msg, ClientMessageSender sender);
+
 }

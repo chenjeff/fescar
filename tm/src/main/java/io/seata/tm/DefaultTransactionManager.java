@@ -42,41 +42,53 @@ public class DefaultTransactionManager implements TransactionManager {
 
     @Override
     public String begin(String applicationId, String transactionServiceGroup, String name, int timeout)
-        throws TransactionException {
+            throws TransactionException {
+
         GlobalBeginRequest request = new GlobalBeginRequest();
         request.setTransactionName(name);
         request.setTimeout(timeout);
-        GlobalBeginResponse response = (GlobalBeginResponse)syncCall(request);
+
+        GlobalBeginResponse response = (GlobalBeginResponse) syncCall(request);
+
         return response.getXid();
     }
 
     @Override
     public GlobalStatus commit(String xid) throws TransactionException {
+
         GlobalCommitRequest globalCommit = new GlobalCommitRequest();
         globalCommit.setXid(xid);
-        GlobalCommitResponse response = (GlobalCommitResponse)syncCall(globalCommit);
+
+        GlobalCommitResponse response = (GlobalCommitResponse) syncCall(globalCommit);
+
         return response.getGlobalStatus();
     }
 
     @Override
     public GlobalStatus rollback(String xid) throws TransactionException {
+
         GlobalRollbackRequest globalRollback = new GlobalRollbackRequest();
         globalRollback.setXid(xid);
-        GlobalRollbackResponse response = (GlobalRollbackResponse)syncCall(globalRollback);
+
+        GlobalRollbackResponse response = (GlobalRollbackResponse) syncCall(globalRollback);
+
         return response.getGlobalStatus();
     }
 
     @Override
     public GlobalStatus getStatus(String xid) throws TransactionException {
+
         GlobalStatusRequest queryGlobalStatus = new GlobalStatusRequest();
         queryGlobalStatus.setXid(xid);
-        GlobalStatusResponse response = (GlobalStatusResponse)syncCall(queryGlobalStatus);
+
+        GlobalStatusResponse response = (GlobalStatusResponse) syncCall(queryGlobalStatus);
+
         return response.getGlobalStatus();
     }
 
     private AbstractTransactionResponse syncCall(AbstractTransactionRequest request) throws TransactionException {
         try {
-            return (AbstractTransactionResponse)TmRpcClient.getInstance().sendMsgWithResponse(request);
+            return (AbstractTransactionResponse) TmRpcClient.getInstance().sendMsgWithResponse(request);
         } catch (TimeoutException toe) {
             throw new TransactionException(TransactionExceptionCode.IO, toe);
         }

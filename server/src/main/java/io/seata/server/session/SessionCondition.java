@@ -24,10 +24,13 @@ import io.seata.core.model.GlobalStatus;
  * @date 2018 /12/13
  */
 public class SessionCondition {
+
     private Long transactionId;
     private String xid;
+
     private GlobalStatus status;
     private GlobalStatus[] statuses;
+
     private long overTimeAliveMills;
 
     /**
@@ -52,7 +55,7 @@ public class SessionCondition {
      */
     public SessionCondition(GlobalStatus status) {
         this.status = status;
-        statuses = new GlobalStatus[] {status};
+        statuses = new GlobalStatus[]{status};
     }
 
     /**
@@ -132,4 +135,5 @@ public class SessionCondition {
     public void setStatuses(GlobalStatus[] statuses) {
         this.statuses = statuses;
     }
+
 }

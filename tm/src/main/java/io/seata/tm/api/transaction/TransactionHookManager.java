@@ -39,6 +39,7 @@ public final class TransactionHookManager {
         if (hooks == null || hooks.isEmpty()) {
             return Collections.emptyList();
         }
+
         return Collections.unmodifiableList(hooks);
     }
 
@@ -51,10 +52,12 @@ public final class TransactionHookManager {
         if (transactionHook == null) {
             throw new NullPointerException("transactionHook must not be null");
         }
+
         List<TransactionHook> transactionHooks = LOCAL_HOOKS.get();
         if (transactionHooks == null) {
             LOCAL_HOOKS.set(new ArrayList<>());
         }
+
         LOCAL_HOOKS.get().add(transactionHook);
     }
 
@@ -64,4 +67,5 @@ public final class TransactionHookManager {
     public static void clear() {
         LOCAL_HOOKS.remove();
     }
+
 }

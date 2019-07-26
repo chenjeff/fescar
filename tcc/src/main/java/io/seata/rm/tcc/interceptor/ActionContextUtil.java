@@ -44,19 +44,20 @@ public class ActionContextUtil {
         try {
             Map<String, Object> context = new HashMap<String, Object>(8);
             List<Field> fields = new ArrayList<Field>();
+
             getAllField(targetParam.getClass(), fields);
-            for (Field f : fields) {
-                String fieldName = f.getName();
-                Annotation annotation = f.getAnnotation(BusinessActionContextParameter.class);
+            for (Field field : fields) {
+                String fieldName = field.getName();
+                Annotation annotation = field.getAnnotation(BusinessActionContextParameter.class);
 
                 if (annotation != null) {
-                    BusinessActionContextParameter param = (BusinessActionContextParameter)annotation;
-                    f.setAccessible(true);
-                    Object paramObject = f.get(targetParam);
+                    BusinessActionContextParameter param = (BusinessActionContextParameter) annotation;
+                    field.setAccessible(true);
+                    Object paramObject = field.get(targetParam);
                     int index = param.index();
                     if (index >= 0) {
                         @SuppressWarnings("unchecked")
-                        Object targetObject = ((List<Object>)paramObject).get(index);
+                        Object targetObject = ((List<Object>) paramObject).get(index);
                         if (param.isParamInProperty()) {
                             context.putAll(fetchContextFromObject(targetObject));
                         } else {
@@ -79,6 +80,7 @@ public class ActionContextUtil {
                     }
                 }
             }
+
             return context;
         } catch (Throwable t) {
             throw new FrameworkException(t, "fetchContextFromObject failover");
@@ -95,10 +97,12 @@ public class ActionContextUtil {
         if (interFace == Object.class || interFace.isInterface()) {
             return;
         }
+
         Field[] field = interFace.getDeclaredFields();
         if (field != null) {
             fields.addAll(Arrays.asList(field));
         }
+
         getAllField(interFace.getSuperclass(), fields);
     }
 

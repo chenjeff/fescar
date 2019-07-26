@@ -54,4 +54,5 @@ public interface SQLRecognizer {
      * @return The original SQL.
      */
     String getOriginalSQL();
+
 }

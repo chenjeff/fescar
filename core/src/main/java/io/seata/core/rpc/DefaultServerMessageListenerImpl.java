@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
  * @date 2018 /10/18
  */
 public class DefaultServerMessageListenerImpl implements ServerMessageListener {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultServerMessageListenerImpl.class);
     private static BlockingQueue<String> messageStrings = new LinkedBlockingQueue<String>();
     private ServerMessageSender serverMessageSender;
@@ -69,32 +70,41 @@ public class DefaultServerMessageListenerImpl implements ServerMessageListener {
     public void onTrxMessage(long msgId, ChannelHandlerContext ctx, Object message, ServerMessageSender sender) {
         RpcContext rpcContext = ChannelManager.getContextFromIdentified(ctx.channel());
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(
-                "server received:" + message + ",clientIp:" + NetUtil.toIpAddress(ctx.channel().remoteAddress())
+            LOGGER.debug("server received:" + message
+                    + ",clientIp:" + NetUtil.toIpAddress(ctx.channel().remoteAddress())
                     + ",vgroup:" + rpcContext.getTransactionServiceGroup());
         } else {
-            messageStrings.offer(
-                message + ",clientIp:" + NetUtil.toIpAddress(ctx.channel().remoteAddress()) + ",vgroup:" + rpcContext
-                    .getTransactionServiceGroup());
+            // not debug 异步批量输出日志
+            messageStrings.offer(message
+                    + ",clientIp:" + NetUtil.toIpAddress(ctx.channel().remoteAddress())
+                    + ",vgroup:" + rpcContext.getTransactionServiceGroup());
         }
-        if (!(message instanceof AbstractMessage)) { return; }
+
+        if (!(message instanceof AbstractMessage)) {
+            return;
+        }
+
         if (message instanceof MergedWarpMessage) {
-            AbstractResultMessage[] results = new AbstractResultMessage[((MergedWarpMessage)message).msgs.size()];
+            AbstractResultMessage[] results = new AbstractResultMessage[((MergedWarpMessage) message).msgs.size()];
             for (int i = 0; i < results.length; i++) {
-                final AbstractMessage subMessage = ((MergedWarpMessage)message).msgs.get(i);
+                final AbstractMessage subMessage = ((MergedWarpMessage) message).msgs.get(i);
                 results[i] = transactionMessageHandler.onRequest(subMessage, rpcContext);
             }
+
             MergeResultMessage resultMessage = new MergeResultMessage();
             resultMessage.setMsgs(results);
             sender.sendResponse(msgId, ctx.channel(), resultMessage);
         } else if (message instanceof AbstractResultMessage) {
-            transactionMessageHandler.onResponse((AbstractResultMessage)message, rpcContext);
+            transactionMessageHandler.onResponse((AbstractResultMessage) message, rpcContext);
         }
     }
 
     @Override
-    public void onRegRmMessage(long msgId, ChannelHandlerContext ctx, RegisterRMRequest message,
-                               ServerMessageSender sender, RegisterCheckAuthHandler checkAuthHandler) {
+    public void onRegRmMessage(long msgId,
+                               ChannelHandlerContext ctx,
+                               RegisterRMRequest message,
+                               ServerMessageSender sender,
+                               RegisterCheckAuthHandler checkAuthHandler) {
 
         boolean isSuccess = false;
         try {
@@ -114,8 +124,13 @@ public class DefaultServerMessageListenerImpl implements ServerMessageListener {
     }
 
     @Override
-    public void onRegTmMessage(long msgId, ChannelHandlerContext ctx, RegisterTMRequest message,
-                               ServerMessageSender sender, RegisterCheckAuthHandler checkAuthHandler) {
+    public void onRegTmMessage(long msgId,
+                               ChannelHandlerContext ctx,
+                               RegisterTMRequest message,
+                               ServerMessageSender sender,
+                               RegisterCheckAuthHandler checkAuthHandler) {
+
+        // {ip-address}:{port}
         String ipAndPort = NetUtil.toStringAddress(ctx.channel().remoteAddress());
         Version.putChannelVersion(ctx.channel(), message.getVersion());
         boolean isSuccess = false;
@@ -125,17 +140,15 @@ public class DefaultServerMessageListenerImpl implements ServerMessageListener {
                 Version.putChannelVersion(ctx.channel(), message.getVersion());
                 isSuccess = true;
                 if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info(String
-                        .format("checkAuth for client:%s vgroup:%s ok", ipAndPort,
-                            message.getTransactionServiceGroup()));
+                    LOGGER.info(String.format("checkAuth for client:%s vgroup:%s ok", ipAndPort, message.getTransactionServiceGroup()));
                 }
             }
         } catch (Exception exx) {
             isSuccess = false;
             LOGGER.error(exx.getMessage());
         }
-        sender.sendResponse(msgId, ctx.channel(),
-            new RegisterTMResponse(isSuccess));
+
+        sender.sendResponse(msgId, ctx.channel(), new RegisterTMResponse(isSuccess));
     }
 
     @Override
@@ -154,9 +167,13 @@ public class DefaultServerMessageListenerImpl implements ServerMessageListener {
      * Init.
      */
     public void init() {
-        ExecutorService mergeSendExecutorService = new ThreadPoolExecutor(MAX_LOG_SEND_THREAD, MAX_LOG_SEND_THREAD,
-            KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
-            new NamedThreadFactory(THREAD_PREFIX, MAX_LOG_SEND_THREAD, true));
+        ExecutorService mergeSendExecutorService = new ThreadPoolExecutor(MAX_LOG_SEND_THREAD,
+                MAX_LOG_SEND_THREAD,
+                KEEP_ALIVE_TIME,
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>(),
+                new NamedThreadFactory(THREAD_PREFIX, MAX_LOG_SEND_THREAD, true));
+
         mergeSendExecutorService.submit(new BatchLogRunnable());
     }
 
@@ -180,6 +197,7 @@ public class DefaultServerMessageListenerImpl implements ServerMessageListener {
 
     /**
      * The type Batch log runnable.
+     * 每 3ms 执行一次
      */
     class BatchLogRunnable implements Runnable {
 
@@ -196,6 +214,7 @@ public class DefaultServerMessageListenerImpl implements ServerMessageListener {
                     }
                 }
                 try {
+                    // 3ms
                     Thread.sleep(IDLE_CHECK_MILLS);
                 } catch (InterruptedException exx) {
                     LOGGER.error(exx.getMessage());

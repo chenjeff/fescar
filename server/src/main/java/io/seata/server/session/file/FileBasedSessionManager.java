@@ -48,8 +48,11 @@ import io.seata.server.store.TransactionWriteStore;
 @LoadLevel(name = "file")
 public class FileBasedSessionManager extends DefaultSessionManager implements Reloadable {
 
+    /**
+     * store.file.session.reload.read_size  [default: 100]
+     */
     private static final int READ_SIZE = ConfigurationFactory.getInstance().getInt(
-        ConfigurationKeys.SERVICE_SESSION_RELOAD_READ_SIZE, 100);
+            ConfigurationKeys.SERVICE_SESSION_RELOAD_READ_SIZE, 100);
 
     /**
      * Instantiates a new File based session manager.
@@ -60,9 +63,11 @@ public class FileBasedSessionManager extends DefaultSessionManager implements Re
      */
     public FileBasedSessionManager(String name, String sessionStoreFilePath) throws IOException {
         super(name);
-        transactionStoreManager = EnhancedServiceLoader.load(TransactionStoreManager.class, StoreMode.FILE.name(),
-            new Class[] {String.class, SessionManager.class},
-            new Object[] {sessionStoreFilePath + File.separator + name, this});
+        transactionStoreManager = EnhancedServiceLoader.load(TransactionStoreManager.class,
+                StoreMode.FILE.name(),
+                new Class[]{String.class, SessionManager.class},
+                // sessionStore/root.data
+                new Object[]{sessionStoreFilePath + File.separator + name, this});
     }
 
     @Override
@@ -95,7 +100,6 @@ public class FileBasedSessionManager extends DefaultSessionManager implements Re
                         existingBranch.setStatus(branchSession.getStatus());
                     }
                 }
-
             });
         }
     }
@@ -130,9 +134,9 @@ public class FileBasedSessionManager extends DefaultSessionManager implements Re
         if (!(transactionStoreManager instanceof ReloadableStore)) {
             return;
         }
-        while (((ReloadableStore)transactionStoreManager).hasRemaining(isHistory)) {
-            List<TransactionWriteStore> stores = ((ReloadableStore)transactionStoreManager).readWriteStore(READ_SIZE,
-                isHistory);
+
+        while (((ReloadableStore) transactionStoreManager).hasRemaining(isHistory)) {
+            List<TransactionWriteStore> stores = ((ReloadableStore) transactionStoreManager).readWriteStore(READ_SIZE, isHistory);
             restore(stores, unhandledBranchBuffer);
         }
     }
@@ -146,11 +150,10 @@ public class FileBasedSessionManager extends DefaultSessionManager implements Re
             switch (logOperation) {
                 case GLOBAL_ADD:
                 case GLOBAL_UPDATE: {
-                    GlobalSession globalSession = (GlobalSession)sessionStorable;
+                    GlobalSession globalSession = (GlobalSession) sessionStorable;
                     if (globalSession.getTransactionId() == 0) {
-                        LOGGER.error(
-                            "Restore globalSession from file failed, the transactionId is zero , xid:" + globalSession
-                                .getXid());
+                        LOGGER.error("Restore globalSession from file failed, the transactionId is zero , xid:"
+                                + globalSession.getXid());
                         break;
                     }
                     GlobalSession foundGlobalSession = sessionMap.get(globalSession.getXid());
@@ -162,11 +165,10 @@ public class FileBasedSessionManager extends DefaultSessionManager implements Re
                     break;
                 }
                 case GLOBAL_REMOVE: {
-                    GlobalSession globalSession = (GlobalSession)sessionStorable;
+                    GlobalSession globalSession = (GlobalSession) sessionStorable;
                     if (globalSession.getTransactionId() == 0) {
-                        LOGGER.error(
-                            "Restore globalSession from file failed, the transactionId is zero , xid:" + globalSession
-                                .getXid());
+                        LOGGER.error("Restore globalSession from file failed, the transactionId is zero , xid:"
+                                + globalSession.getXid());
                         break;
                     }
                     if (sessionMap.remove(globalSession.getXid()) == null) {
@@ -178,11 +180,10 @@ public class FileBasedSessionManager extends DefaultSessionManager implements Re
                 }
                 case BRANCH_ADD:
                 case BRANCH_UPDATE: {
-                    BranchSession branchSession = (BranchSession)sessionStorable;
+                    BranchSession branchSession = (BranchSession) sessionStorable;
                     if (branchSession.getTransactionId() == 0) {
-                        LOGGER.error(
-                            "Restore branchSession from file failed, the transactionId is zero , xid:" + branchSession
-                                .getXid());
+                        LOGGER.error("Restore branchSession from file failed, the transactionId is zero , xid:"
+                                + branchSession.getXid());
                         break;
                     }
                     GlobalSession foundGlobalSession = sessionMap.get(branchSession.getXid());
@@ -199,21 +200,19 @@ public class FileBasedSessionManager extends DefaultSessionManager implements Re
                     break;
                 }
                 case BRANCH_REMOVE: {
-                    BranchSession branchSession = (BranchSession)sessionStorable;
+                    BranchSession branchSession = (BranchSession) sessionStorable;
                     String xid = branchSession.getXid();
                     long bid = branchSession.getBranchId();
                     if (branchSession.getTransactionId() == 0) {
-                        LOGGER.error(
-                            "Restore branchSession from file failed, the transactionId is zero , xid:" + branchSession
-                                .getXid());
+                        LOGGER.error("Restore branchSession from file failed, the transactionId is zero , xid:"
+                                + branchSession.getXid());
                         break;
                     }
                     GlobalSession found = sessionMap.get(xid);
                     if (found == null) {
                         if (LOGGER.isInfoEnabled()) {
-                            LOGGER.info(
-                                "GlobalSession To Be Updated (Remove Branch) Does Not Exists [" + bid + "/" + xid
-                                    + "]");
+                            LOGGER.info("GlobalSession To Be Updated (Remove Branch) Does Not Exists ["
+                                    + bid + "/" + xid + "]");
                         }
                     } else {
                         BranchSession theBranch = found.getBranch(bid);
@@ -227,22 +226,20 @@ public class FileBasedSessionManager extends DefaultSessionManager implements Re
                     }
                     break;
                 }
-
                 default:
                     throw new ShouldNeverHappenException("Unknown Operation: " + logOperation);
-
             }
         }
-        setMaxId(maxRecoverId);
 
+        setMaxId(maxRecoverId);
     }
 
     private long getMaxId(long maxRecoverId, SessionStorable sessionStorable) {
         long currentId = 0;
         if (sessionStorable instanceof GlobalSession) {
-            currentId = ((GlobalSession)sessionStorable).getTransactionId();
+            currentId = ((GlobalSession) sessionStorable).getTransactionId();
         } else if (sessionStorable instanceof BranchSession) {
-            currentId = ((BranchSession)sessionStorable).getBranchId();
+            currentId = ((BranchSession) sessionStorable).getBranchId();
         }
 
         return maxRecoverId > currentId ? maxRecoverId : currentId;
@@ -265,4 +262,5 @@ public class FileBasedSessionManager extends DefaultSessionManager implements Re
     public void destroy() {
         transactionStoreManager.shutdown();
     }
+
 }

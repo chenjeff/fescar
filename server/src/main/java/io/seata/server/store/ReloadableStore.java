@@ -42,5 +42,4 @@ public interface ReloadableStore {
      */
     boolean hasRemaining(boolean isHistory);
 
-
 }

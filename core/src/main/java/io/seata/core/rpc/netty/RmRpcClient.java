@@ -123,12 +123,12 @@ public final class RmRpcClient extends AbstractRpcRemotingClient {
                 if (null == instance) {
                     NettyClientConfig nettyClientConfig = new NettyClientConfig();
                     final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
-                        nettyClientConfig.getClientWorkerThreads(), nettyClientConfig.getClientWorkerThreads(),
-                        KEEP_ALIVE_TIME, TimeUnit.SECONDS,
-                        new LinkedBlockingQueue(MAX_QUEUE_SIZE),
-                        new NamedThreadFactory(nettyClientConfig.getRmDispatchThreadPrefix(),
-                            nettyClientConfig.getClientWorkerThreads()),
-                        new ThreadPoolExecutor.CallerRunsPolicy());
+                            nettyClientConfig.getClientWorkerThreads(), nettyClientConfig.getClientWorkerThreads(),
+                            KEEP_ALIVE_TIME, TimeUnit.SECONDS,
+                            new LinkedBlockingQueue(MAX_QUEUE_SIZE),
+                            new NamedThreadFactory(nettyClientConfig.getRmDispatchThreadPrefix(),
+                                    nettyClientConfig.getClientWorkerThreads()),
+                            new ThreadPoolExecutor.CallerRunsPolicy());
                     instance = new RmRpcClient(nettyClientConfig, null, threadPoolExecutor);
                 }
             }
@@ -146,11 +146,13 @@ public final class RmRpcClient extends AbstractRpcRemotingClient {
                     reconnect(transactionServiceGroup);
                 }
             }, SCHEDULE_INTERVAL_MILLS, SCHEDULE_INTERVAL_MILLS, TimeUnit.SECONDS);
+
             ExecutorService mergeSendExecutorService = new ThreadPoolExecutor(MAX_MERGE_SEND_THREAD,
-                MAX_MERGE_SEND_THREAD,
-                KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>(),
-                new NamedThreadFactory(getThreadPrefix(MERGE_THREAD_PREFIX), MAX_MERGE_SEND_THREAD));
+                    MAX_MERGE_SEND_THREAD,
+                    KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS,
+                    new LinkedBlockingQueue<Runnable>(),
+                    new NamedThreadFactory(getThreadPrefix(MERGE_THREAD_PREFIX), MAX_MERGE_SEND_THREAD));
+
             mergeSendExecutorService.submit(new MergedSendRunnable());
         }
     }
@@ -175,6 +177,7 @@ public final class RmRpcClient extends AbstractRpcRemotingClient {
 
     @Override
     protected Config getNettyPoolConfig() {
+
         Config poolConfig = new Config();
         poolConfig.maxActive = rmClientConfig.getMaxPoolActive();
         poolConfig.minIdle = rmClientConfig.getMinPoolIdle();
@@ -182,6 +185,7 @@ public final class RmRpcClient extends AbstractRpcRemotingClient {
         poolConfig.testOnBorrow = rmClientConfig.isPoolTestBorrow();
         poolConfig.testOnReturn = rmClientConfig.isPoolTestReturn();
         poolConfig.lifo = rmClientConfig.isPoolLifo();
+
         return poolConfig;
     }
 
@@ -194,6 +198,7 @@ public final class RmRpcClient extends AbstractRpcRemotingClient {
     public Object sendMsgWithResponse(Object msg, long timeout) throws TimeoutException {
         String validAddress = loadBalance(transactionServiceGroup);
         Channel acquireChannel = connect(validAddress);
+
         return super.sendAsyncRequestWithResponse(validAddress, acquireChannel, msg, timeout);
     }
 
@@ -210,7 +215,7 @@ public final class RmRpcClient extends AbstractRpcRemotingClient {
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
         if (evt instanceof IdleStateEvent) {
-            IdleStateEvent idleStateEvent = (IdleStateEvent)evt;
+            IdleStateEvent idleStateEvent = (IdleStateEvent) evt;
             if (idleStateEvent == IdleStateEvent.READER_IDLE_STATE_EVENT) {
                 if (LOGGER.isInfoEnabled()) {
                     LOGGER.info("RmRpcClient channel" + ctx.channel() + " idle.");
@@ -236,7 +241,9 @@ public final class RmRpcClient extends AbstractRpcRemotingClient {
 
     @Override
     protected void releaseChannel(Channel channel, String serverAddress) {
-        if (null == channel || null == serverAddress) { return; }
+        if (null == channel || null == serverAddress) {
+            return;
+        }
         Object connectLock = channelLocks.get(serverAddress);
         try {
             synchronized (connectLock) {
@@ -268,9 +275,11 @@ public final class RmRpcClient extends AbstractRpcRemotingClient {
                 return channelToServer;
             }
         }
+
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("will connect to " + serverAddress);
         }
+
         channelLocks.putIfAbsent(serverAddress, new Object());
         Object connectLock = channelLocks.get(serverAddress);
         synchronized (connectLock) {
@@ -290,27 +299,30 @@ public final class RmRpcClient extends AbstractRpcRemotingClient {
         if (channelToServer != null && channelToServer.isActive()) {
             return channelToServer;
         }
+
         Channel channelFromPool = null;
         try {
             String resourceIds = customerKeys == null ? getMergedResourceKeys(resourceManager) : customerKeys;
             if (LOGGER.isInfoEnabled()) {
                 LOGGER.info("RM will register :" + resourceIds);
             }
+
             RegisterRMRequest message = null;
             if (null == poolKeyMap.get(serverAddress)) {
                 message = new RegisterRMRequest(applicationId, transactionServiceGroup);
                 message.setResourceIds(resourceIds);
-                poolKeyMap.putIfAbsent(serverAddress,
-                    new NettyPoolKey(getTransactionRole(), serverAddress, message));
+                poolKeyMap.putIfAbsent(serverAddress, new NettyPoolKey(getTransactionRole(), serverAddress, message));
             } else {
-                message = (RegisterRMRequest)poolKeyMap.get(serverAddress).getMessage();
+                message = (RegisterRMRequest) poolKeyMap.get(serverAddress).getMessage();
                 message.setResourceIds(resourceIds);
             }
+
             channelFromPool = nettyClientKeyPool.borrowObject(poolKeyMap.get(serverAddress));
         } catch (Exception exx) {
             LOGGER.error(FrameworkErrorCode.RegisterRM.getErrCode(), "register RM failed.", exx);
             throw new FrameworkException("can not register RM,err:" + exx.getMessage());
         }
+
         return channelFromPool;
     }
 
@@ -342,8 +354,8 @@ public final class RmRpcClient extends AbstractRpcRemotingClient {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         LOGGER.error(FrameworkErrorCode.ExceptionCaught.getErrCode(),
-            NetUtil.toStringAddress(ctx.channel().remoteAddress()) + "connect exception. " + cause.getMessage(),
-            cause);
+                NetUtil.toStringAddress(ctx.channel().remoteAddress()) + "connect exception. " + cause.getMessage(),
+                cause);
         releaseChannel(ctx.channel(), getAddressFromChannel(ctx.channel()));
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("remove exception rm channel:" + ctx.channel());
@@ -352,14 +364,13 @@ public final class RmRpcClient extends AbstractRpcRemotingClient {
     }
 
     private void sendRegisterMessage(String serverAddress, Channel channel, String dbKey) {
-        RegisterRMRequest message = new RegisterRMRequest(applicationId,
-            transactionServiceGroup);
+        RegisterRMRequest message = new RegisterRMRequest(applicationId, transactionServiceGroup);
         message.setResourceIds(dbKey);
         try {
             super.sendAsyncRequestWithoutResponse(null, channel, message);
         } catch (FrameworkException e) {
             if (e.getErrcode() == FrameworkErrorCode.ChannelIsNotWritable
-                && serverAddress != null) {
+                    && serverAddress != null) {
                 releaseChannel(channel, serverAddress);
                 if (LOGGER.isInfoEnabled()) {
                     LOGGER.info("remove channel:" + channel);
@@ -430,15 +441,15 @@ public final class RmRpcClient extends AbstractRpcRemotingClient {
 
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(
-                "register RM success. server version:" + ((RegisterRMResponse)response).getVersion()
-                    + ",channel:" + channel);
+                    "register RM success. server version:" + ((RegisterRMResponse) response).getVersion()
+                            + ",channel:" + channel);
         }
         if (customerKeys == null) {
             synchronized (channels) {
                 channels.put(serverAddress, channel);
             }
             String dbKey = getMergedResourceKeys(resourceManager);
-            RegisterRMRequest message = (RegisterRMRequest)requestMessage;
+            RegisterRMRequest message = (RegisterRMRequest) requestMessage;
             if (message.getResourceIds() != null) {
                 if (!message.getResourceIds().equals(dbKey)) {
                     sendRegisterMessage(serverAddress, channel, dbKey);
@@ -479,14 +490,16 @@ public final class RmRpcClient extends AbstractRpcRemotingClient {
 
         if (response instanceof RegisterRMResponse && LOGGER.isInfoEnabled()) {
             LOGGER.info(
-                "register RM failed. server version:" + ((RegisterRMResponse)response).getVersion());
+                    "register RM failed. server version:" + ((RegisterRMResponse) response).getVersion());
         }
         throw new FrameworkException("register RM failed.");
     }
 
     @Override
     public void destroyChannel(String serverAddress, Channel channel) {
-        if (null == channel) { return; }
+        if (null == channel) {
+            return;
+        }
         try {
             if (channel.equals(channels.get(serverAddress))) {
                 channels.remove(serverAddress);

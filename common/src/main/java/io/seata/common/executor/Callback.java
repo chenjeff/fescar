@@ -19,7 +19,6 @@ package io.seata.common.executor;
  * The interface Callback.
  *
  * @param <T> the type parameter
- *
  * @author zhangsen
  */
 public interface Callback<T> {
@@ -30,6 +29,7 @@ public interface Callback<T> {
      * @return the t
      * @throws Throwable the throwable
      */
-    public T execute() throws Throwable;
+    T execute() throws Throwable;
+
 }
 

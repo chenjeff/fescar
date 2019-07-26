@@ -55,14 +55,17 @@ public class SessionHolder {
      * The constant ROOT_SESSION_MANAGER_NAME.
      */
     public static final String ROOT_SESSION_MANAGER_NAME = "root.data";
+
     /**
      * The constant ASYNC_COMMITTING_SESSION_MANAGER_NAME.
      */
     public static final String ASYNC_COMMITTING_SESSION_MANAGER_NAME = "async.commit.data";
+
     /**
      * The constant RETRY_COMMITTING_SESSION_MANAGER_NAME.
      */
     public static final String RETRY_COMMITTING_SESSION_MANAGER_NAME = "retry.commit.data";
+
     /**
      * The constant RETRY_ROLLBACKING_SESSION_MANAGER_NAME.
      */
@@ -81,44 +84,50 @@ public class SessionHolder {
      */
     public static void init(String mode) throws IOException {
         if (StringUtils.isBlank(mode)) {
-            //use default
+            // use default
+            // store.mode   [default: file]
             mode = CONFIG.getConfig(ConfigurationKeys.STORE_MODE);
         }
-        //the store mode
+
+        // the store mode: FILE | DB
         StoreMode storeMode = StoreMode.valueof(mode);
         if (StoreMode.DB.equals(storeMode)) {
-            //database store
+            // database store
             ROOT_SESSION_MANAGER = EnhancedServiceLoader.load(SessionManager.class, StoreMode.DB.name());
+            // async.commit.data
             ASYNC_COMMITTING_SESSION_MANAGER = EnhancedServiceLoader.load(SessionManager.class, StoreMode.DB.name(),
-                new Object[] {ASYNC_COMMITTING_SESSION_MANAGER_NAME});
-            ;
+                    new Object[]{ASYNC_COMMITTING_SESSION_MANAGER_NAME});
+            // retry.commit.data
             RETRY_COMMITTING_SESSION_MANAGER = EnhancedServiceLoader.load(SessionManager.class, StoreMode.DB.name(),
-                new Object[] {RETRY_COMMITTING_SESSION_MANAGER_NAME});
-            ;
+                    new Object[]{RETRY_COMMITTING_SESSION_MANAGER_NAME});
+            // retry.rollback.data
             RETRY_ROLLBACKING_SESSION_MANAGER = EnhancedServiceLoader.load(SessionManager.class, StoreMode.DB.name(),
-                new Object[] {RETRY_ROLLBACKING_SESSION_MANAGER_NAME});
-            ;
+                    new Object[]{RETRY_ROLLBACKING_SESSION_MANAGER_NAME});
         } else if (StoreMode.FILE.equals(storeMode)) {
-            //file store
+            // file store
+            // store.file.dir   [default: sessionStore]
             String sessionStorePath = CONFIG.getConfig(ConfigurationKeys.STORE_FILE_DIR);
             if (sessionStorePath == null) {
                 throw new StoreException("the {store.file.dir} is empty.");
             }
+
+            // root.data
             ROOT_SESSION_MANAGER = EnhancedServiceLoader.load(SessionManager.class, StoreMode.FILE.name(),
-                new Object[] {ROOT_SESSION_MANAGER_NAME, sessionStorePath});
+                    new Object[]{ROOT_SESSION_MANAGER_NAME, sessionStorePath});
+
             ASYNC_COMMITTING_SESSION_MANAGER = EnhancedServiceLoader.load(SessionManager.class, DEFAULT,
-                new Object[] {ASYNC_COMMITTING_SESSION_MANAGER_NAME});
-            ;
+                    new Object[]{ASYNC_COMMITTING_SESSION_MANAGER_NAME});
+
             RETRY_COMMITTING_SESSION_MANAGER = EnhancedServiceLoader.load(SessionManager.class, DEFAULT,
-                new Object[] {RETRY_COMMITTING_SESSION_MANAGER_NAME});
-            ;
+                    new Object[]{RETRY_COMMITTING_SESSION_MANAGER_NAME});
+
             RETRY_ROLLBACKING_SESSION_MANAGER = EnhancedServiceLoader.load(SessionManager.class, DEFAULT,
-                new Object[] {RETRY_ROLLBACKING_SESSION_MANAGER_NAME});
-            ;
+                    new Object[]{RETRY_ROLLBACKING_SESSION_MANAGER_NAME});
         } else {
-            //unknown store
+            // unknown store
             throw new IllegalArgumentException("unknown store mode:" + mode);
         }
+
         //relaod
         reload();
     }
@@ -128,7 +137,8 @@ public class SessionHolder {
      */
     protected static void reload() {
         if (ROOT_SESSION_MANAGER instanceof Reloadable) {
-            ((Reloadable)ROOT_SESSION_MANAGER).reload();
+            // FileBasedSessionManager
+            ((Reloadable) ROOT_SESSION_MANAGER).reload();
 
             Collection<GlobalSession> reloadedSessions = ROOT_SESSION_MANAGER.allSessions();
             if (reloadedSessions != null && !reloadedSessions.isEmpty()) {
@@ -167,8 +177,7 @@ public class SessionHolder {
                                 case Committing:
                                 case CommitRetrying:
                                     try {
-                                        globalSession.addSessionLifecycleListener(
-                                            getRetryCommittingSessionManager());
+                                        globalSession.addSessionLifecycleListener(getRetryCommittingSessionManager());
                                         getRetryCommittingSessionManager().addGlobalSession(globalSession);
                                     } catch (TransactionException e) {
                                         throw new ShouldNeverHappenException(e);
@@ -179,8 +188,7 @@ public class SessionHolder {
                                 case TimeoutRollbacking:
                                 case TimeoutRollbackRetrying:
                                     try {
-                                        globalSession.addSessionLifecycleListener(
-                                            getRetryRollbackingSessionManager());
+                                        globalSession.addSessionLifecycleListener(getRetryRollbackingSessionManager());
                                         getRetryRollbackingSessionManager().addGlobalSession(globalSession);
                                     } catch (TransactionException e) {
                                         throw new ShouldNeverHappenException(e);
@@ -192,12 +200,9 @@ public class SessionHolder {
                                 default:
                                     throw new ShouldNeverHappenException("NOT properly handled " + globalStatus);
                             }
-
                             break;
-
                         }
                     }
-
                 });
             }
         }
@@ -212,6 +217,7 @@ public class SessionHolder {
         if (ROOT_SESSION_MANAGER == null) {
             throw new ShouldNeverHappenException("SessionManager is NOT init!");
         }
+
         return ROOT_SESSION_MANAGER;
     }
 
@@ -224,6 +230,7 @@ public class SessionHolder {
         if (ASYNC_COMMITTING_SESSION_MANAGER == null) {
             throw new ShouldNeverHappenException("SessionManager is NOT init!");
         }
+
         return ASYNC_COMMITTING_SESSION_MANAGER;
     }
 
@@ -236,6 +243,7 @@ public class SessionHolder {
         if (RETRY_COMMITTING_SESSION_MANAGER == null) {
             throw new ShouldNeverHappenException("SessionManager is NOT init!");
         }
+
         return RETRY_COMMITTING_SESSION_MANAGER;
     }
 
@@ -248,6 +256,7 @@ public class SessionHolder {
         if (RETRY_ROLLBACKING_SESSION_MANAGER == null) {
             throw new ShouldNeverHappenException("SessionManager is NOT init!");
         }
+
         return RETRY_ROLLBACKING_SESSION_MANAGER;
     }
 
@@ -267,4 +276,5 @@ public class SessionHolder {
         RETRY_COMMITTING_SESSION_MANAGER.destroy();
         RETRY_ROLLBACKING_SESSION_MANAGER.destroy();
     }
+
 }

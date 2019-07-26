@@ -39,6 +39,7 @@ public class LocalTCCRemotingParser extends AbstractedRemotingParser {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -51,6 +52,7 @@ public class LocalTCCRemotingParser extends AbstractedRemotingParser {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -59,19 +61,24 @@ public class LocalTCCRemotingParser extends AbstractedRemotingParser {
         if (!this.isRemoting(bean, beanName)) {
             return null;
         }
+
         RemotingDesc remotingDesc = new RemotingDesc();
         remotingDesc.setReference(true);
-        remotingDesc.setProtocol(Protocols.IN_JVM);
+        remotingDesc.setProtocol(getProtocol());
+
         Class<?> classType = bean.getClass();
         Set<Class<?>> interfaceClasses = ReflectionUtil.getInterfaces(classType);
+
         for (Class<?> interClass : interfaceClasses) {
             if (interClass.isAnnotationPresent(LocalTCC.class)) {
                 remotingDesc.setInterfaceClassName(interClass.getName());
                 remotingDesc.setInterfaceClass(interClass);
                 remotingDesc.setTargetBean(bean);
+
                 return remotingDesc;
             }
         }
+
         throw new FrameworkException("Couldn't parser any Remoting info");
     }
 
@@ -79,4 +86,5 @@ public class LocalTCCRemotingParser extends AbstractedRemotingParser {
     public short getProtocol() {
         return Protocols.IN_JVM;
     }
+
 }

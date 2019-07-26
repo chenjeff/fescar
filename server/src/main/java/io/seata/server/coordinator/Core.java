@@ -52,4 +52,5 @@ public interface Core extends TransactionManager, ResourceManagerOutbound {
      * @throws TransactionException the transaction exception
      */
     void doGlobalRollback(GlobalSession globalSession, boolean retrying) throws TransactionException;
+
 }

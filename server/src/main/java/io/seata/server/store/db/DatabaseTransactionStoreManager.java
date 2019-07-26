@@ -52,8 +52,7 @@ import io.seata.server.store.TransactionStoreManager;
  * @data 2019 /4/2
  */
 @LoadLevel(name = "db")
-public class DatabaseTransactionStoreManager extends AbstractTransactionStoreManager
-    implements TransactionStoreManager, Initialize {
+public class DatabaseTransactionStoreManager extends AbstractTransactionStoreManager implements TransactionStoreManager, Initialize {
 
     /**
      * The constant CONFIG.
@@ -91,33 +90,51 @@ public class DatabaseTransactionStoreManager extends AbstractTransactionStoreMan
         if (inited.get()) {
             return;
         }
+
+        /**
+         * store.db.query-limit [default: 100]
+         */
         logQueryLimit = CONFIG.getInt(ConfigurationKeys.STORE_DB_LOG_QUERY_LIMIT, DEFAULT_LOG_QUERY_LIMIT);
+
+        /**
+         * store.db.datasource
+         */
         String datasourceType = CONFIG.getConfig(ConfigurationKeys.STORE_DB_DATASOURCE_TYPE);
-        //init dataSource
+
+        /**
+         * init dataSource
+         */
         DataSourceGenerator dataSourceGenerator = EnhancedServiceLoader.load(DataSourceGenerator.class, datasourceType);
         DataSource logStoreDataSource = dataSourceGenerator.generateDataSource();
-        logStore = EnhancedServiceLoader.load(LogStore.class, StoreMode.DB.name(), new Class[] {DataSource.class},
-            new Object[] {logStoreDataSource});
+        logStore = EnhancedServiceLoader.load(LogStore.class, StoreMode.DB.name(), new Class[]{DataSource.class},
+                new Object[]{logStoreDataSource});
+
         inited.set(true);
     }
 
     @Override
     public boolean writeSession(LogOperation logOperation, SessionStorable session) {
+        // GLOBAL
         if (LogOperation.GLOBAL_ADD.equals(logOperation)) {
             logStore.insertGlobalTransactionDO(convertGlobalTransactionDO(session));
         } else if (LogOperation.GLOBAL_UPDATE.equals(logOperation)) {
             logStore.updateGlobalTransactionDO(convertGlobalTransactionDO(session));
         } else if (LogOperation.GLOBAL_REMOVE.equals(logOperation)) {
             logStore.deleteGlobalTransactionDO(convertGlobalTransactionDO(session));
-        } else if (LogOperation.BRANCH_ADD.equals(logOperation)) {
+        }
+        // BRANCH
+        else if (LogOperation.BRANCH_ADD.equals(logOperation)) {
             logStore.insertBranchTransactionDO(convertBranchTransactionDO(session));
         } else if (LogOperation.BRANCH_UPDATE.equals(logOperation)) {
             logStore.updateBranchTransactionDO(convertBranchTransactionDO(session));
         } else if (LogOperation.BRANCH_REMOVE.equals(logOperation)) {
             logStore.deleteBranchTransactionDO(convertBranchTransactionDO(session));
-        } else {
+        }
+        // Unknown
+        else {
             throw new StoreException("Unknown LogOperation:" + logOperation.name());
         }
+
         return true;
     }
 
@@ -128,14 +145,19 @@ public class DatabaseTransactionStoreManager extends AbstractTransactionStoreMan
      * @return the global session
      */
     public GlobalSession readSession(Long transactionId) {
-        //global transaction
+        /**
+         * global transaction
+         */
         GlobalTransactionDO globalTransactionDO = logStore.queryGlobalTransactionDO(transactionId);
         if (globalTransactionDO == null) {
             return null;
         }
-        //branch transactions
-        List<BranchTransactionDO> branchTransactionDOs = logStore.queryBranchTransactionDO(
-            globalTransactionDO.getXid());
+
+        /**
+         * branch transactions
+         */
+        List<BranchTransactionDO> branchTransactionDOs = logStore.queryBranchTransactionDO(globalTransactionDO.getXid());
+
         return getGlobalSession(globalTransactionDO, branchTransactionDOs);
     }
 
@@ -147,14 +169,14 @@ public class DatabaseTransactionStoreManager extends AbstractTransactionStoreMan
      */
     @Override
     public GlobalSession readSession(String xid) {
-        //global transaction
+        // global transaction
         GlobalTransactionDO globalTransactionDO = logStore.queryGlobalTransactionDO(xid);
         if (globalTransactionDO == null) {
             return null;
         }
-        //branch transactions
-        List<BranchTransactionDO> branchTransactionDOs = logStore.queryBranchTransactionDO(
-            globalTransactionDO.getXid());
+        // branch transactions
+        List<BranchTransactionDO> branchTransactionDOs = logStore.queryBranchTransactionDO(globalTransactionDO.getXid());
+
         return getGlobalSession(globalTransactionDO, branchTransactionDOs);
     }
 
@@ -169,17 +191,19 @@ public class DatabaseTransactionStoreManager extends AbstractTransactionStoreMan
         for (int i = 0; i < statuses.length; i++) {
             states[i] = statuses[i].getCode();
         }
+
         List<GlobalSession> globalSessions = new ArrayList<GlobalSession>();
-        //global transaction
+        // global transaction
         List<GlobalTransactionDO> globalTransactionDOs = logStore.queryGlobalTransactionDO(states, logQueryLimit);
         if (CollectionUtils.isEmpty(globalTransactionDOs)) {
             return null;
         }
+
         for (GlobalTransactionDO globalTransactionDO : globalTransactionDOs) {
-            List<BranchTransactionDO> branchTransactionDOs = logStore.queryBranchTransactionDO(
-                globalTransactionDO.getXid());
+            List<BranchTransactionDO> branchTransactionDOs = logStore.queryBranchTransactionDO(globalTransactionDO.getXid());
             globalSessions.add(getGlobalSession(globalTransactionDO, branchTransactionDOs));
         }
+
         return globalSessions;
     }
 
@@ -202,36 +226,43 @@ public class DatabaseTransactionStoreManager extends AbstractTransactionStoreMan
         } else if (CollectionUtils.isNotEmpty(sessionCondition.getStatuses())) {
             return readSession(sessionCondition.getStatuses());
         }
+
         return null;
     }
 
-    private GlobalSession getGlobalSession(GlobalTransactionDO globalTransactionDO,
-                                           List<BranchTransactionDO> branchTransactionDOs) {
+    private GlobalSession getGlobalSession(GlobalTransactionDO globalTransactionDO, List<BranchTransactionDO> branchTransactionDOs) {
         GlobalSession globalSession = convertGlobalSession(globalTransactionDO);
-        //branch transactions
+
+        /**
+         * branch transactions
+         */
         if (branchTransactionDOs != null && branchTransactionDOs.size() > 0) {
             for (BranchTransactionDO branchTransactionDO : branchTransactionDOs) {
                 globalSession.add(convertBranchSession(branchTransactionDO));
             }
         }
+
         return globalSession;
     }
 
     private GlobalSession convertGlobalSession(GlobalTransactionDO globalTransactionDO) {
         GlobalSession session = new GlobalSession(globalTransactionDO.getApplicationId(),
-            globalTransactionDO.getTransactionServiceGroup(),
-            globalTransactionDO.getTransactionName(),
-            globalTransactionDO.getTimeout());
+                globalTransactionDO.getTransactionServiceGroup(),
+                globalTransactionDO.getTransactionName(),
+                globalTransactionDO.getTimeout());
+
         session.setTransactionId(globalTransactionDO.getTransactionId());
         session.setXid(globalTransactionDO.getXid());
         session.setStatus(GlobalStatus.get(globalTransactionDO.getStatus()));
         session.setApplicationData(globalTransactionDO.getApplicationData());
         session.setBeginTime(globalTransactionDO.getBeginTime());
+
         return session;
     }
 
     private BranchSession convertBranchSession(BranchTransactionDO branchTransactionDO) {
         BranchSession branchSession = new BranchSession();
+
         branchSession.setXid(branchTransactionDO.getXid());
         branchSession.setTransactionId(branchTransactionDO.getTransactionId());
         branchSession.setApplicationData(branchTransactionDO.getApplicationData());
@@ -242,17 +273,20 @@ public class DatabaseTransactionStoreManager extends AbstractTransactionStoreMan
         branchSession.setLockKey(branchTransactionDO.getLockKey());
         branchSession.setResourceGroupId(branchTransactionDO.getResourceGroupId());
         branchSession.setStatus(BranchStatus.get(branchTransactionDO.getStatus()));
+
         return branchSession;
     }
 
     private GlobalTransactionDO convertGlobalTransactionDO(SessionStorable session) {
         if (session == null || !(session instanceof GlobalSession)) {
-            throw new IllegalArgumentException(
-                "the parameter of SessionStorable is not available, SessionStorable:" + StringUtils.toString(session));
+            throw new IllegalArgumentException("the parameter of SessionStorable is not available, SessionStorable:"
+                    + StringUtils.toString(session));
         }
-        GlobalSession globalSession = (GlobalSession)session;
+
+        GlobalSession globalSession = (GlobalSession) session;
 
         GlobalTransactionDO globalTransactionDO = new GlobalTransactionDO();
+
         globalTransactionDO.setXid(globalSession.getXid());
         globalTransactionDO.setStatus(globalSession.getStatus().getCode());
         globalTransactionDO.setApplicationId(globalSession.getApplicationId());
@@ -262,17 +296,20 @@ public class DatabaseTransactionStoreManager extends AbstractTransactionStoreMan
         globalTransactionDO.setTransactionName(globalSession.getTransactionName());
         globalTransactionDO.setTransactionServiceGroup(globalSession.getTransactionServiceGroup());
         globalTransactionDO.setApplicationData(globalSession.getApplicationData());
+
         return globalTransactionDO;
     }
 
     private BranchTransactionDO convertBranchTransactionDO(SessionStorable session) {
         if (session == null || !(session instanceof BranchSession)) {
-            throw new IllegalArgumentException(
-                "the parameter of SessionStorable is not available, SessionStorable:" + StringUtils.toString(session));
+            throw new IllegalArgumentException("the parameter of SessionStorable is not available, SessionStorable:"
+                    + StringUtils.toString(session));
         }
-        BranchSession branchSession = (BranchSession)session;
+
+        BranchSession branchSession = (BranchSession) session;
 
         BranchTransactionDO branchTransactionDO = new BranchTransactionDO();
+
         branchTransactionDO.setXid(branchSession.getXid());
         branchTransactionDO.setBranchId(branchSession.getBranchId());
         branchTransactionDO.setBranchType(branchSession.getBranchType().name());
@@ -283,6 +320,7 @@ public class DatabaseTransactionStoreManager extends AbstractTransactionStoreMan
         branchTransactionDO.setApplicationData(branchSession.getApplicationData());
         branchTransactionDO.setResourceId(branchSession.getResourceId());
         branchTransactionDO.setStatus(branchSession.getStatus().getCode());
+
         return branchTransactionDO;
     }
 
@@ -303,4 +341,5 @@ public class DatabaseTransactionStoreManager extends AbstractTransactionStoreMan
     public void setLogQueryLimit(int logQueryLimit) {
         this.logQueryLimit = logQueryLimit;
     }
+
 }

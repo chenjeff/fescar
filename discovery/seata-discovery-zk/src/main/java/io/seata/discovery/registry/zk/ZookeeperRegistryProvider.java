@@ -25,8 +25,10 @@ import io.seata.discovery.registry.RegistryService;
  */
 @LoadLevel(name = "ZK", order = 1)
 public class ZookeeperRegistryProvider implements RegistryProvider {
+
     @Override
     public RegistryService provide() {
         return ZookeeperRegisterServiceImpl.getInstance();
     }
+
 }

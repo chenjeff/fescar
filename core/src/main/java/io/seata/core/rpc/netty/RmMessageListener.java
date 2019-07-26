@@ -62,18 +62,18 @@ public class RmMessageListener implements ClientMessageListener {
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("onMessage:" + msg);
         }
+
         if (msg instanceof BranchCommitRequest) {
-            handleBranchCommit(msgId, serverAddress, (BranchCommitRequest)msg, sender);
+            handleBranchCommit(msgId, serverAddress, (BranchCommitRequest) msg, sender);
         } else if (msg instanceof BranchRollbackRequest) {
-            handleBranchRollback(msgId, serverAddress, (BranchRollbackRequest)msg, sender);
+            handleBranchRollback(msgId, serverAddress, (BranchRollbackRequest) msg, sender);
         }
     }
 
-    private void handleBranchRollback(long msgId, String serverAddress,
-                                      BranchRollbackRequest branchRollbackRequest,
-                                      ClientMessageSender sender) {
+    private void handleBranchRollback(long msgId, String serverAddress, BranchRollbackRequest branchRollbackRequest, ClientMessageSender sender) {
+
         BranchRollbackResponse resultMessage = null;
-        resultMessage = (BranchRollbackResponse)handler.onRequest(branchRollbackRequest, null);
+        resultMessage = (BranchRollbackResponse) handler.onRequest(branchRollbackRequest, null);
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("branch rollback result:" + resultMessage);
         }
@@ -84,13 +84,11 @@ public class RmMessageListener implements ClientMessageListener {
         }
     }
 
-    private void handleBranchCommit(long msgId, String serverAddress,
-                                    BranchCommitRequest branchCommitRequest,
-                                    ClientMessageSender sender) {
+    private void handleBranchCommit(long msgId, String serverAddress, BranchCommitRequest branchCommitRequest, ClientMessageSender sender) {
 
         BranchCommitResponse resultMessage = null;
         try {
-            resultMessage = (BranchCommitResponse)handler.onRequest(branchCommitRequest, null);
+            resultMessage = (BranchCommitResponse) handler.onRequest(branchCommitRequest, null);
             sender.sendResponse(msgId, serverAddress, resultMessage);
         } catch (Exception e) {
             LOGGER.error(FrameworkErrorCode.NetOnMessage.getErrCode(), e.getMessage(), e);

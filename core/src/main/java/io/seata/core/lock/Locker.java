@@ -31,7 +31,7 @@ public interface Locker {
      * @param rowLock the row lock
      * @return the boolean
      */
-    boolean acquireLock(List<RowLock> rowLock) ;
+    boolean acquireLock(List<RowLock> rowLock);
 
     /**
      * Un lock boolean.

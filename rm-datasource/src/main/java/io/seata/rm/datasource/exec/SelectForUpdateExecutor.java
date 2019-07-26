@@ -33,9 +33,8 @@ import io.seata.rm.datasource.sql.struct.TableRecords;
 /**
  * The type Select for update executor.
  *
- * @author sharajava
- *
  * @param <S> the type parameter
+ * @author sharajava
  */
 public class SelectForUpdateExecutor<T, S extends Statement> extends BaseTransactionalExecutor<T, S> {
 
@@ -46,14 +45,15 @@ public class SelectForUpdateExecutor<T, S extends Statement> extends BaseTransac
      * @param statementCallback the statement callback
      * @param sqlRecognizer     the sql recognizer
      */
-    public SelectForUpdateExecutor(StatementProxy<S> statementProxy, StatementCallback<T, S> statementCallback,
+    public SelectForUpdateExecutor(StatementProxy<S> statementProxy,
+                                   StatementCallback<T, S> statementCallback,
                                    SQLRecognizer sqlRecognizer) {
         super(statementProxy, statementCallback, sqlRecognizer);
     }
 
     @Override
     public T doExecute(Object... args) throws Throwable {
-        SQLSelectRecognizer recognizer = (SQLSelectRecognizer)sqlRecognizer;
+        SQLSelectRecognizer recognizer = (SQLSelectRecognizer) sqlRecognizer;
 
         Connection conn = statementProxy.getConnection();
         T rs = null;
@@ -64,16 +64,20 @@ public class SelectForUpdateExecutor<T, S extends Statement> extends BaseTransac
         StringBuffer selectSQLAppender = new StringBuffer("SELECT ");
         selectSQLAppender.append(getColumnNameInSQL(getTableMeta().getPkName()));
         selectSQLAppender.append(" FROM " + getFromTableInSQL());
+
         String whereCondition = null;
         ArrayList<Object> paramAppender = new ArrayList<>();
         if (statementProxy instanceof ParametersHolder) {
-            whereCondition = recognizer.getWhereCondition((ParametersHolder)statementProxy, paramAppender);
+            whereCondition = recognizer.getWhereCondition((ParametersHolder) statementProxy, paramAppender);
         } else {
             whereCondition = recognizer.getWhereCondition();
         }
+
         if (!StringUtils.isNullOrEmpty(whereCondition)) {
             selectSQLAppender.append(" WHERE " + whereCondition);
         }
+
+        // 悲观锁
         selectSQLAppender.append(" FOR UPDATE");
         String selectPKSQL = selectSQLAppender.toString();
 
@@ -81,6 +85,7 @@ public class SelectForUpdateExecutor<T, S extends Statement> extends BaseTransac
             if (originalAutoCommit) {
                 conn.setAutoCommit(false);
             }
+
             sp = conn.setSavepoint();
             // #870
             // execute return Boolean
@@ -94,13 +99,18 @@ public class SelectForUpdateExecutor<T, S extends Statement> extends BaseTransac
                 ResultSet rsPK = null;
                 try {
                     if (paramAppender.isEmpty()) {
+                        // Statement
                         stPK = statementProxy.getConnection().createStatement();
+                        // ResultSet
                         rsPK = stPK.executeQuery(selectPKSQL);
                     } else {
+                        // PreparedStatement
                         pstPK = statementProxy.getConnection().prepareStatement(selectPKSQL);
                         for (int i = 0; i < paramAppender.size(); i++) {
                             pstPK.setObject(i + 1, paramAppender.get(i));
                         }
+
+                        // ResultSet
                         rsPK = pstPK.executeQuery();
                     }
 
@@ -111,22 +121,18 @@ public class SelectForUpdateExecutor<T, S extends Statement> extends BaseTransac
                     }
 
                     if (RootContext.inGlobalTransaction()) {
-                        //do as usual
+                        // do as usual
                         statementProxy.getConnectionProxy().checkLock(lockKeys);
                     } else if (RootContext.requireGlobalLock()) {
-                        //check lock key before commit just like DML to avoid reentrant lock problem(no xid thus can
-                        // not reentrant)
+                        // check lock key before commit just like DML to avoid reentrant lock problem(no xid thus can not reentrant)
                         statementProxy.getConnectionProxy().appendLockKey(lockKeys);
                     } else {
                         throw new RuntimeException("Unknown situation!");
                     }
-                    
                     break;
-
                 } catch (LockConflictException lce) {
                     conn.rollback(sp);
                     lockRetryController.sleep(lce);
-
                 } finally {
                     if (rsPK != null) {
                         rsPK.close();
@@ -139,7 +145,6 @@ public class SelectForUpdateExecutor<T, S extends Statement> extends BaseTransac
                     }
                 }
             }
-
         } finally {
             if (sp != null) {
                 conn.releaseSavepoint(sp);
@@ -148,6 +153,8 @@ public class SelectForUpdateExecutor<T, S extends Statement> extends BaseTransac
                 conn.setAutoCommit(true);
             }
         }
+
         return rs;
     }
+
 }

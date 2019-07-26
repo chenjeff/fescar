@@ -56,6 +56,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Sharable
 public final class TmRpcClient extends AbstractRpcRemotingClient {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(TmRpcClient.class);
     private static volatile TmRpcClient instance;
     private static final int MAX_MERGE_SEND_THREAD = 1;
@@ -70,8 +71,8 @@ public final class TmRpcClient extends AbstractRpcRemotingClient {
     private String applicationId;
     private String transactionServiceGroup;
     private final NettyClientConfig tmClientConfig;
-    private final ConcurrentMap<String, NettyPoolKey> poolKeyMap
-        = new ConcurrentHashMap<String, NettyPoolKey>();
+    private final ConcurrentMap<String, NettyPoolKey> poolKeyMap = new ConcurrentHashMap<String, NettyPoolKey>();
+
     /**
      * The constant enableDegrade.
      */
@@ -93,8 +94,10 @@ public final class TmRpcClient extends AbstractRpcRemotingClient {
      */
     public static TmRpcClient getInstance(String applicationId, String transactionServiceGroup) {
         TmRpcClient tmRpcClient = getInstance();
+
         tmRpcClient.setApplicationId(applicationId);
         tmRpcClient.setTransactionServiceGroup(transactionServiceGroup);
+
         return tmRpcClient;
     }
 
@@ -109,16 +112,17 @@ public final class TmRpcClient extends AbstractRpcRemotingClient {
                 if (null == instance) {
                     NettyClientConfig nettyClientConfig = new NettyClientConfig();
                     final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
-                        nettyClientConfig.getClientWorkerThreads(), nettyClientConfig.getClientWorkerThreads(),
-                        KEEP_ALIVE_TIME, TimeUnit.SECONDS,
-                        new LinkedBlockingQueue(MAX_QUEUE_SIZE),
-                        new NamedThreadFactory(nettyClientConfig.getTmDispatchThreadPrefix(),
-                            nettyClientConfig.getClientWorkerThreads()),
-                        RejectedPolicies.runsOldestTaskPolicy());
+                            nettyClientConfig.getClientWorkerThreads(), nettyClientConfig.getClientWorkerThreads(),
+                            KEEP_ALIVE_TIME, TimeUnit.SECONDS,
+                            new LinkedBlockingQueue(MAX_QUEUE_SIZE),
+                            new NamedThreadFactory(nettyClientConfig.getTmDispatchThreadPrefix(),
+                                    nettyClientConfig.getClientWorkerThreads()),
+                            RejectedPolicies.runsOldestTaskPolicy());
                     instance = new TmRpcClient(nettyClientConfig, null, threadPoolExecutor);
                 }
             }
         }
+
         return instance;
     }
 
@@ -142,9 +146,14 @@ public final class TmRpcClient extends AbstractRpcRemotingClient {
      */
     public void init(long healthCheckDelay, long healthCheckPeriod) {
         initVars();
-        ExecutorService mergeSendExecutorService = new ThreadPoolExecutor(MAX_MERGE_SEND_THREAD, MAX_MERGE_SEND_THREAD,
-            KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
-            new NamedThreadFactory(getThreadPrefix(MERGE_THREAD_PREFIX), MAX_MERGE_SEND_THREAD));
+        ExecutorService mergeSendExecutorService = new ThreadPoolExecutor(
+                MAX_MERGE_SEND_THREAD,
+                MAX_MERGE_SEND_THREAD,
+                KEEP_ALIVE_TIME,
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>(),
+                new NamedThreadFactory(getThreadPrefix(MERGE_THREAD_PREFIX), MAX_MERGE_SEND_THREAD));
+
         mergeSendExecutorService.submit(new MergedSendRunnable());
         timerExecutor.scheduleAtFixedRate(new Runnable() {
             @Override
@@ -162,12 +171,13 @@ public final class TmRpcClient extends AbstractRpcRemotingClient {
     public Object sendMsgWithResponse(Object msg, long timeout) throws TimeoutException {
         String validAddress = loadBalance(transactionServiceGroup);
         Channel acquireChannel = connect(validAddress);
+
         Object result = super.sendAsyncRequestWithResponse(validAddress, acquireChannel, msg, timeout);
-        if (result instanceof GlobalBeginResponse
-                && ((GlobalBeginResponse) result).getResultCode() == ResultCode.Failed) {
+        if (result instanceof GlobalBeginResponse && ((GlobalBeginResponse) result).getResultCode() == ResultCode.Failed) {
             LOGGER.error("begin response error,release channel:" + acquireChannel);
             releaseChannel(acquireChannel, validAddress);
         }
+
         return result;
     }
 
@@ -178,14 +188,14 @@ public final class TmRpcClient extends AbstractRpcRemotingClient {
 
     @Override
     public Object sendMsgWithResponse(String serverAddress, Object msg, long timeout)
-        throws TimeoutException {
+            throws TimeoutException {
         return sendAsyncRequestWithResponse(serverAddress, connect(serverAddress), msg, timeout);
     }
 
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
         if (evt instanceof IdleStateEvent) {
-            IdleStateEvent idleStateEvent = (IdleStateEvent)evt;
+            IdleStateEvent idleStateEvent = (IdleStateEvent) evt;
             if (idleStateEvent.state() == IdleState.READER_IDLE) {
                 if (LOGGER.isInfoEnabled()) {
                     LOGGER.info("channel" + ctx.channel() + " read idle.");
@@ -218,6 +228,7 @@ public final class TmRpcClient extends AbstractRpcRemotingClient {
         if (null == channel || null == serverAddress) {
             return;
         }
+
         try {
             Object connectLock = channelLocks.get(serverAddress);
             synchronized (connectLock) {
@@ -226,6 +237,7 @@ public final class TmRpcClient extends AbstractRpcRemotingClient {
                     nettyClientKeyPool.returnObject(poolKeyMap.get(serverAddress), channel);
                     return;
                 }
+
                 if (ch.compareTo(channel) == 0) {
                     if (LOGGER.isInfoEnabled()) {
                         LOGGER.info("return to pool, tm channel:" + channel);
@@ -243,12 +255,14 @@ public final class TmRpcClient extends AbstractRpcRemotingClient {
     @Override
     protected Channel connect(String serverAddress) {
         Channel channelToServer = channels.get(serverAddress);
+
         if (null != channelToServer) {
             channelToServer = getExistAliveChannel(channelToServer, serverAddress);
             if (null != channelToServer) {
                 return channelToServer;
             }
         }
+
         channelLocks.putIfAbsent(serverAddress, new Object());
         Object connectLock = channelLocks.get(serverAddress);
         synchronized (connectLock) {
@@ -269,17 +283,20 @@ public final class TmRpcClient extends AbstractRpcRemotingClient {
                 } catch (InterruptedException exx) {
                     LOGGER.error(exx.getMessage());
                 }
+
                 channel = channels.get(serverAddress);
                 if (null == channel || channel.isActive()) {
                     return channel;
                 }
             }
+
             if (i == NettyClientConfig.getMaxCheckAliveRetry()) {
                 LOGGER.warn("channel " + channel + " is not active after long wait, close it.");
                 releaseChannel(channel, serverAddress);
                 return null;
             }
         }
+
         return null;
     }
 
@@ -312,11 +329,8 @@ public final class TmRpcClient extends AbstractRpcRemotingClient {
             return channelToServer;
         }
         try {
-            RegisterTMRequest
-                registerTransactionManagerRequest = new RegisterTMRequest(
-                applicationId, transactionServiceGroup);
-            poolKeyMap.putIfAbsent(serverAddress,
-                new NettyPoolKey(getTransactionRole(), serverAddress, registerTransactionManagerRequest));
+            RegisterTMRequest registerTransactionManagerRequest = new RegisterTMRequest(applicationId, transactionServiceGroup);
+            poolKeyMap.putIfAbsent(serverAddress, new NettyPoolKey(getTransactionRole(), serverAddress, registerTransactionManagerRequest));
             channelToServer = nettyClientKeyPool.borrowObject(poolKeyMap.get(serverAddress));
         } catch (Exception exx) {
             LOGGER.error("get channel from pool error.", exx);
@@ -369,7 +383,7 @@ public final class TmRpcClient extends AbstractRpcRemotingClient {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         LOGGER.error(FrameworkErrorCode.ExceptionCaught.getErrCode(),
-            NetUtil.toStringAddress(ctx.channel().remoteAddress()) + "connect exception. " + cause.getMessage(), cause);
+                NetUtil.toStringAddress(ctx.channel().remoteAddress()) + "connect exception. " + cause.getMessage(), cause);
         releaseChannel(ctx.channel(), getAddressFromChannel(ctx.channel()));
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("remove exception rm channel:" + ctx.channel());
@@ -391,14 +405,16 @@ public final class TmRpcClient extends AbstractRpcRemotingClient {
                                   AbstractMessage requestMessage) {
         if (response instanceof RegisterTMResponse && LOGGER.isInfoEnabled()) {
             LOGGER.info("register client failed, server version:"
-                + ((RegisterTMResponse)response).getVersion());
+                    + ((RegisterTMResponse) response).getVersion());
         }
         throw new FrameworkException("register client app failed.");
     }
 
     @Override
     public void destroyChannel(String serverAddress, Channel channel) {
-        if (null == channel) { return; }
+        if (null == channel) {
+            return;
+        }
         try {
             if (channel.equals(channels.get(serverAddress))) {
                 channels.remove(serverAddress);

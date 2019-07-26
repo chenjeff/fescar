@@ -27,7 +27,6 @@ public class NoRollbackRule extends RollbackRule {
         super(clazz);
     }
 
-
     public NoRollbackRule(String exceptionName) {
         super(exceptionName);
     }

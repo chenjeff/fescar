@@ -42,22 +42,23 @@ import org.slf4j.LoggerFactory;
  * @date 2018 /12/24
  */
 public class NettyBaseConfig {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyBaseConfig.class);
 
     /**
      * The constant CONFIG.
      */
     protected static final Configuration CONFIG = ConfigurationFactory.getInstance();
+
     /**
-     * The constant BOSS_THREAD_PREFIX.
+     * The constant BOSS_THREAD_PREFIX.     NettyBoss
      */
     protected static final String BOSS_THREAD_PREFIX = CONFIG.getConfig("transport.thread-factory.boss-thread-prefix");
 
     /**
-     * The constant WORKER_THREAD_PREFIX.
+     * The constant WORKER_THREAD_PREFIX.   NettyServerNIOWorker
      */
-    protected static final String WORKER_THREAD_PREFIX = CONFIG.getConfig(
-        "transport.thread-factory.worker-thread-prefix");
+    protected static final String WORKER_THREAD_PREFIX = CONFIG.getConfig("transport.thread-factory.worker-thread-prefix");
 
     /**
      * The constant SHARE_BOSS_WORKER.
@@ -65,7 +66,7 @@ public class NettyBaseConfig {
     protected static final boolean SHARE_BOSS_WORKER = CONFIG.getBoolean("transport.thread-factory.share-boss-worker");
 
     /**
-     * The constant WORKER_THREAD_SIZE.
+     * The constant WORKER_THREAD_SIZE. default: 8
      */
     protected static int WORKER_THREAD_SIZE;
 
@@ -88,8 +89,14 @@ public class NettyBaseConfig {
      */
     protected static final TransportProtocolType TRANSPORT_PROTOCOL_TYPE;
 
+    /**
+     * 默认写空闲 3秒
+     */
     private static final int DEFAULT_WRITE_IDLE_SECONDS = 5;
 
+    /**
+     * 读空闲 基于 写空闲 3倍
+     */
     private static final int READIDLE_BASE_WRITEIDLE = 3;
 
     /**
@@ -108,7 +115,9 @@ public class NettyBaseConfig {
     protected static final int MAX_ALL_IDLE_SECONDS = 0;
 
     static {
-        TRANSPORT_PROTOCOL_TYPE = TransportProtocolType.valueOf(CONFIG.getConfig("transport.type",TransportProtocolType.TCP.name()));
+        // TCP or UNIX_DOMAIN_SOCKET
+        TRANSPORT_PROTOCOL_TYPE = TransportProtocolType.valueOf(CONFIG.getConfig("transport.type", TransportProtocolType.TCP.name()));
+        // default: 8
         String workerThreadSize = CONFIG.getConfig("transport.thread-factory.worker-thread-size");
         if (StringUtils.isNotBlank(workerThreadSize) && StringUtils.isNumeric(workerThreadSize)) {
             WORKER_THREAD_SIZE = Integer.parseInt(workerThreadSize);
@@ -117,7 +126,9 @@ public class NettyBaseConfig {
         } else {
             WORKER_THREAD_SIZE = WorkThreadMode.Default.getValue();
         }
-        TRANSPORT_SERVER_TYPE = TransportServerType.valueOf(CONFIG.getConfig("transport.server",TransportServerType.NIO.name()));
+
+        // NATIVE or NIO
+        TRANSPORT_SERVER_TYPE = TransportServerType.valueOf(CONFIG.getConfig("transport.server", TransportServerType.NIO.name()));
         switch (TRANSPORT_SERVER_TYPE) {
             case NIO:
                 if (TRANSPORT_PROTOCOL_TYPE == TransportProtocolType.TCP) {
@@ -161,19 +172,22 @@ public class NettyBaseConfig {
             default:
                 throw new IllegalArgumentException("unsupported.");
         }
+
         boolean enableHeartbeat = CONFIG.getBoolean("transport.heartbeat", false);
         if (enableHeartbeat) {
             MAX_WRITE_IDLE_SECONDS = DEFAULT_WRITE_IDLE_SECONDS;
         } else {
             MAX_WRITE_IDLE_SECONDS = 0;
         }
+
         MAX_READ_IDLE_SECONDS = MAX_WRITE_IDLE_SECONDS * READIDLE_BASE_WRITEIDLE;
     }
 
     private static void raiseUnsupportedTransportError() throws RuntimeException {
-        String errMsg = String.format("Unsupported provider type :[%s] for transport:[%s].", TRANSPORT_SERVER_TYPE,
-            TRANSPORT_PROTOCOL_TYPE);
+        String errMsg = String.format("Unsupported provider type :[%s] for transport:[%s].",
+                TRANSPORT_SERVER_TYPE, TRANSPORT_PROTOCOL_TYPE);
         LOGGER.error(errMsg);
+
         throw new IllegalArgumentException(errMsg);
     }
 
@@ -233,6 +247,6 @@ public class NettyBaseConfig {
                 return null;
             }
         }
-
     }
+
 }

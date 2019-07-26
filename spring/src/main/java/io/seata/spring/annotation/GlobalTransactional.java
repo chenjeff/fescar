@@ -47,27 +47,30 @@ public @interface GlobalTransactional {
 
     /**
      * roll back for the Class
+     *
      * @return
      */
     Class<? extends Throwable>[] rollbackFor() default {};
 
     /**
-     *  roll back for the class name
+     * roll back for the class name
+     *
      * @return
      */
     String[] rollbackForClassName() default {};
 
     /**
      * not roll back for the Class
+     *
      * @return
      */
     Class<? extends Throwable>[] noRollbackFor() default {};
 
     /**
      * not roll back for the class name
+     *
      * @return
      */
     String[] noRollbackForClassName() default {};
-
 
 }

@@ -53,6 +53,7 @@ public class TransactionManagerHolder {
         if (SingletonHolder.INSTANCE == null) {
             throw new ShouldNeverHappenException("TransactionManager is NOT ready!");
         }
+
         return SingletonHolder.INSTANCE;
     }
 
@@ -68,4 +69,5 @@ public class TransactionManagerHolder {
     private TransactionManagerHolder() {
 
     }
+
 }

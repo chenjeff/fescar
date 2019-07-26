@@ -33,6 +33,7 @@ public class ContextCoreLoader {
                 // Default
                 contextCore = new ThreadLocalContextCore();
             }
+
             INSTANCE = contextCore;
         }
     }

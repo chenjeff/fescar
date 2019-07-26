@@ -42,4 +42,5 @@ public abstract class AbstractTransactionRequestToTC extends AbstractTransaction
     public void setTCInboundHandler(TCInboundHandler handler) {
         this.handler = handler;
     }
+
 }

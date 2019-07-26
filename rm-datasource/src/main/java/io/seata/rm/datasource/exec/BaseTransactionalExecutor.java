@@ -33,10 +33,9 @@ import io.seata.rm.datasource.undo.SQLUndoLog;
 /**
  * The type Base transactional executor.
  *
- * @author sharajava
- *
  * @param <T> the type parameter
  * @param <S> the type parameter
+ * @author sharajava
  */
 public abstract class BaseTransactionalExecutor<T, S extends Statement> implements Executor {
 
@@ -64,8 +63,10 @@ public abstract class BaseTransactionalExecutor<T, S extends Statement> implemen
      * @param statementCallback the statement callback
      * @param sqlRecognizer     the sql recognizer
      */
-    public BaseTransactionalExecutor(StatementProxy<S> statementProxy, StatementCallback<T, S> statementCallback,
+    public BaseTransactionalExecutor(StatementProxy<S> statementProxy,
+                                     StatementCallback<T, S> statementCallback,
                                      SQLRecognizer sqlRecognizer) {
+
         this.statementProxy = statementProxy;
         this.statementCallback = statementCallback;
         this.sqlRecognizer = sqlRecognizer;
@@ -83,6 +84,7 @@ public abstract class BaseTransactionalExecutor<T, S extends Statement> implemen
         } else {
             statementProxy.getConnectionProxy().setGlobalLockRequire(false);
         }
+
         return doExecute(args);
     }
 
@@ -96,7 +98,7 @@ public abstract class BaseTransactionalExecutor<T, S extends Statement> implemen
     protected abstract Object doExecute(Object... args) throws Throwable;
 
     /**
-     * Build where condition by p ks string.
+     * Build where condition by pks string.
      *
      * @param pkRows the pk rows
      * @return the string
@@ -111,6 +113,7 @@ public abstract class BaseTransactionalExecutor<T, S extends Statement> implemen
                 whereConditionAppender.append(" OR ");
             }
         }
+
         return whereConditionAppender.toString();
     }
 
@@ -163,7 +166,9 @@ public abstract class BaseTransactionalExecutor<T, S extends Statement> implemen
         if (tableMeta != null) {
             return tableMeta;
         }
+
         tableMeta = TableMetaCache.getTableMeta(statementProxy.getConnectionProxy().getDataSourceProxy(), tableName);
+
         return tableMeta;
     }
 
@@ -193,12 +198,13 @@ public abstract class BaseTransactionalExecutor<T, S extends Statement> implemen
      * build lockKey
      *
      * @param rowsIncludingPK the records
-     * @return the string
+     * @return the string   {table-name}:{field},{field},{field},
      */
     protected String buildLockKey(TableRecords rowsIncludingPK) {
         if (rowsIncludingPK.size() == 0) {
             return null;
         }
+
         StringBuilder sb = new StringBuilder();
         sb.append(rowsIncludingPK.getTableMeta().getTableName());
         sb.append(":");
@@ -210,6 +216,7 @@ public abstract class BaseTransactionalExecutor<T, S extends Statement> implemen
                 sb.append(",");
             }
         }
+
         return sb.toString();
     }
 
@@ -229,6 +236,7 @@ public abstract class BaseTransactionalExecutor<T, S extends Statement> implemen
         sqlUndoLog.setTableName(tableName);
         sqlUndoLog.setBeforeImage(beforeImage);
         sqlUndoLog.setAfterImage(afterImage);
+
         return sqlUndoLog;
     }
 

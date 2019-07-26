@@ -74,8 +74,7 @@ import static io.seata.core.exception.TransactionExceptionCode.FailedToSendBranc
  *
  * @author sharajava
  */
-public class DefaultCoordinator extends AbstractTCInboundHandler
-    implements TransactionMessageHandler, ResourceManagerInbound, Disposable {
+public class DefaultCoordinator extends AbstractTCInboundHandler implements TransactionMessageHandler, ResourceManagerInbound, Disposable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultCoordinator.class);
 
@@ -83,43 +82,57 @@ public class DefaultCoordinator extends AbstractTCInboundHandler
 
     /**
      * The Committing retry delay.
+     * <p>
+     * recovery.committing-retry-delay  [default: 5]
      */
     protected int committingRetryDelay = CONFIG.getInt(ConfigurationKeys.COMMITING_RETRY_DELAY, 5);
 
     /**
      * The Asyn committing retry delay.
+     * <p>
+     * recovery.asyn-committing-retry-delay [default: 5]
      */
     protected int asynCommittingRetryDelay = CONFIG.getInt(ConfigurationKeys.ASYN_COMMITING_RETRY_DELAY, 5);
 
     /**
      * The Rollbacking retry delay.
+     * <p>
+     * recovery.rollbacking-retry-delay [default: 5]
      */
     protected int rollbackingRetryDelay = CONFIG.getInt(ConfigurationKeys.ROLLBACKING_RETRY_DELAY, 5);
 
     /**
      * The Timeout retry delay.
+     * <p>
+     * recovery.timeout-retry-delay [default: 5]
      */
     protected int timeoutRetryDelay = CONFIG.getInt(ConfigurationKeys.TIMEOUT_RETRY_DELAY, 5);
 
     private static final int ALWAYS_RETRY_BOUNDARY = 0;
 
+    /**
+     * service.max.commit.retry.timeout [default: -1]
+     */
     private static final Duration MAX_COMMIT_RETRY_TIMEOUT = ConfigurationFactory.getInstance().getDuration(
-        ConfigurationKeys.SERVICE_PREFIX + "max.commit.retry.timeout", DurationUtil.DEFAULT_DURATION, 100);
+            ConfigurationKeys.SERVICE_PREFIX + "max.commit.retry.timeout", DurationUtil.DEFAULT_DURATION, 100);
 
+    /**
+     * service.max.rollback.retry.timeout   [default: -1]
+     */
     private static final Duration MAX_ROLLBACK_RETRY_TIMEOUT = ConfigurationFactory.getInstance().getDuration(
-        ConfigurationKeys.SERVICE_PREFIX + "max.rollback.retry.timeout", DurationUtil.DEFAULT_DURATION, 100);
+            ConfigurationKeys.SERVICE_PREFIX + "max.rollback.retry.timeout", DurationUtil.DEFAULT_DURATION, 100);
 
     private ScheduledThreadPoolExecutor retryRollbacking = new ScheduledThreadPoolExecutor(1,
-        new NamedThreadFactory("RetryRollbacking", 1));
+            new NamedThreadFactory("RetryRollbacking", 1));
 
     private ScheduledThreadPoolExecutor retryCommitting = new ScheduledThreadPoolExecutor(1,
-        new NamedThreadFactory("RetryCommitting", 1));
+            new NamedThreadFactory("RetryCommitting", 1));
 
     private ScheduledThreadPoolExecutor asyncCommitting = new ScheduledThreadPoolExecutor(1,
-        new NamedThreadFactory("AsyncCommitting", 1));
+            new NamedThreadFactory("AsyncCommitting", 1));
 
     private ScheduledThreadPoolExecutor timeoutCheck = new ScheduledThreadPoolExecutor(1,
-        new NamedThreadFactory("TxTimeoutCheck", 1));
+            new NamedThreadFactory("TxTimeoutCheck", 1));
 
     private ServerMessageSender messageSender;
 
@@ -136,61 +149,71 @@ public class DefaultCoordinator extends AbstractTCInboundHandler
     }
 
     @Override
-    protected void doGlobalBegin(GlobalBeginRequest request, GlobalBeginResponse response, RpcContext rpcContext)
-        throws TransactionException {
+    protected void doGlobalBegin(GlobalBeginRequest request,
+                                 GlobalBeginResponse response,
+                                 RpcContext rpcContext) throws TransactionException {
+
         response.setXid(core.begin(rpcContext.getApplicationId(), rpcContext.getTransactionServiceGroup(),
-            request.getTransactionName(), request.getTimeout()));
+                request.getTransactionName(), request.getTimeout()));
     }
 
     @Override
-    protected void doGlobalCommit(GlobalCommitRequest request, GlobalCommitResponse response, RpcContext rpcContext)
-        throws TransactionException {
+    protected void doGlobalCommit(GlobalCommitRequest request,
+                                  GlobalCommitResponse response,
+                                  RpcContext rpcContext) throws TransactionException {
+
         response.setGlobalStatus(core.commit(request.getXid()));
-
     }
 
     @Override
-    protected void doGlobalRollback(GlobalRollbackRequest request, GlobalRollbackResponse response,
+    protected void doGlobalRollback(GlobalRollbackRequest request,
+                                    GlobalRollbackResponse response,
                                     RpcContext rpcContext) throws TransactionException {
-        response.setGlobalStatus(core.rollback(request.getXid()));
 
+        response.setGlobalStatus(core.rollback(request.getXid()));
     }
 
     @Override
-    protected void doGlobalStatus(GlobalStatusRequest request, GlobalStatusResponse response, RpcContext rpcContext)
-        throws TransactionException {
+    protected void doGlobalStatus(GlobalStatusRequest request,
+                                  GlobalStatusResponse response,
+                                  RpcContext rpcContext) throws TransactionException {
+
         response.setGlobalStatus(core.getStatus(request.getXid()));
     }
 
     @Override
-    protected void doBranchRegister(BranchRegisterRequest request, BranchRegisterResponse response,
+    protected void doBranchRegister(BranchRegisterRequest request,
+                                    BranchRegisterResponse response,
                                     RpcContext rpcContext) throws TransactionException {
-        response.setBranchId(
-            core.branchRegister(request.getBranchType(), request.getResourceId(), rpcContext.getClientId(),
-                request.getXid(), request.getApplicationData(), request.getLockKey()));
 
+        response.setBranchId(core.branchRegister(request.getBranchType(), request.getResourceId(),
+                rpcContext.getClientId(), request.getXid(), request.getApplicationData(), request.getLockKey()));
     }
 
     @Override
-    protected void doBranchReport(BranchReportRequest request, BranchReportResponse response, RpcContext rpcContext)
-        throws TransactionException {
+    protected void doBranchReport(BranchReportRequest request,
+                                  BranchReportResponse response,
+                                  RpcContext rpcContext) throws TransactionException {
+
         core.branchReport(request.getBranchType(), request.getXid(), request.getBranchId(),
-            request.getStatus(),
-            request.getApplicationData());
-
+                request.getStatus(), request.getApplicationData());
     }
 
     @Override
-    protected void doLockCheck(GlobalLockQueryRequest request, GlobalLockQueryResponse response, RpcContext rpcContext)
-        throws TransactionException {
+    protected void doLockCheck(GlobalLockQueryRequest request,
+                               GlobalLockQueryResponse response,
+                               RpcContext rpcContext) throws TransactionException {
+
         response.setLockable(core.lockQuery(request.getBranchType(), request.getResourceId(),
-            request.getXid(), request.getLockKey()));
+                request.getXid(), request.getLockKey()));
     }
 
     @Override
-    public BranchStatus branchCommit(BranchType branchType, String xid, long branchId, String resourceId,
-                                     String applicationData)
-        throws TransactionException {
+    public BranchStatus branchCommit(BranchType branchType,
+                                     String xid,
+                                     long branchId,
+                                     String resourceId,
+                                     String applicationData) throws TransactionException {
         try {
             BranchCommitRequest request = new BranchCommitRequest();
             request.setXid(xid);
@@ -203,10 +226,12 @@ public class DefaultCoordinator extends AbstractTCInboundHandler
             if (globalSession == null) {
                 return BranchStatus.PhaseTwo_Committed;
             }
+
             BranchSession branchSession = globalSession.getBranch(branchId);
 
-            BranchCommitResponse response = (BranchCommitResponse)messageSender.sendSyncRequest(resourceId,
-                branchSession.getClientId(), request);
+            BranchCommitResponse response = (BranchCommitResponse) messageSender.sendSyncRequest(resourceId,
+                    branchSession.getClientId(), request);
+
             return response.getBranchStatus();
         } catch (IOException | TimeoutException e) {
             throw new TransactionException(FailedToSendBranchCommitRequest, branchId + "/" + xid, e);
@@ -214,12 +239,13 @@ public class DefaultCoordinator extends AbstractTCInboundHandler
     }
 
     @Override
-    public BranchStatus branchRollback(BranchType branchType, String xid, long branchId, String resourceId,
-                                       String applicationData)
-        throws TransactionException {
+    public BranchStatus branchRollback(BranchType branchType,
+                                       String xid,
+                                       long branchId,
+                                       String resourceId,
+                                       String applicationData) throws TransactionException {
         try {
-            BranchRollbackRequest
-                request = new BranchRollbackRequest();
+            BranchRollbackRequest request = new BranchRollbackRequest();
             request.setXid(xid);
             request.setBranchId(branchId);
             request.setResourceId(resourceId);
@@ -230,10 +256,12 @@ public class DefaultCoordinator extends AbstractTCInboundHandler
             if (globalSession == null) {
                 return BranchStatus.PhaseTwo_Rollbacked;
             }
+
             BranchSession branchSession = globalSession.getBranch(branchId);
 
-            BranchRollbackResponse response = (BranchRollbackResponse)messageSender.sendSyncRequest(resourceId,
-                branchSession.getClientId(), request);
+            BranchRollbackResponse response = (BranchRollbackResponse) messageSender.sendSyncRequest(resourceId,
+                    branchSession.getClientId(), request);
+
             return response.getBranchStatus();
         } catch (IOException | TimeoutException e) {
             throw new TransactionException(FailedToSendBranchRollbackRequest, branchId + "/" + xid, e);
@@ -250,37 +278,41 @@ public class DefaultCoordinator extends AbstractTCInboundHandler
         if (CollectionUtils.isEmpty(allSessions)) {
             return;
         }
+
         if (allSessions.size() > 0 && LOGGER.isDebugEnabled()) {
             LOGGER.debug("Transaction Timeout Check Begin: " + allSessions.size());
         }
+
         for (GlobalSession globalSession : allSessions) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(globalSession.getXid() + " " + globalSession.getStatus() + " " +
-                    globalSession.getBeginTime() + " " + globalSession.getTimeout());
+                LOGGER.debug(globalSession.getXid() + " " + globalSession.getStatus() + " "
+                        + globalSession.getBeginTime() + " " + globalSession.getTimeout());
             }
+
             boolean shouldTimeout = globalSession.lockAndExcute(() -> {
                 if (globalSession.getStatus() != GlobalStatus.Begin || !globalSession.isTimeout()) {
                     return false;
                 }
+
                 globalSession.addSessionLifecycleListener(SessionHolder.getRootSessionManager());
                 globalSession.close();
                 globalSession.changeStatus(GlobalStatus.TimeoutRollbacking);
                 return true;
             });
+
             if (!shouldTimeout) {
                 continue;
             }
-            LOGGER.info(
-                "Global transaction[" + globalSession.getXid() + "] is timeout and will be rolled back.");
+
+            LOGGER.info("Global transaction[" + globalSession.getXid() + "] is timeout and will be rolled back.");
 
             globalSession.addSessionLifecycleListener(SessionHolder.getRetryRollbackingSessionManager());
             SessionHolder.getRetryRollbackingSessionManager().addGlobalSession(globalSession);
-
         }
+
         if (allSessions.size() > 0 && LOGGER.isDebugEnabled()) {
             LOGGER.debug("Transaction Timeout Check End. ");
         }
-
     }
 
     /**
@@ -291,6 +323,7 @@ public class DefaultCoordinator extends AbstractTCInboundHandler
         if (CollectionUtils.isEmpty(rollbackingSessions)) {
             return;
         }
+
         long now = System.currentTimeMillis();
         for (GlobalSession rollbackingSession : rollbackingSessions) {
             try {
@@ -302,11 +335,11 @@ public class DefaultCoordinator extends AbstractTCInboundHandler
                     LOGGER.error("GlobalSession rollback retry timeout [{}]", rollbackingSession.getXid());
                     continue;
                 }
+
                 rollbackingSession.addSessionLifecycleListener(SessionHolder.getRootSessionManager());
                 core.doGlobalRollback(rollbackingSession, true);
             } catch (TransactionException ex) {
-                LOGGER.info("Failed to retry rollbacking [{}] {} {}",
-                    rollbackingSession.getXid(), ex.getCode(), ex.getMessage());
+                LOGGER.info("Failed to retry rollbacking [{}] {} {}", rollbackingSession.getXid(), ex.getCode(), ex.getMessage());
             }
         }
     }
@@ -319,6 +352,7 @@ public class DefaultCoordinator extends AbstractTCInboundHandler
         if (CollectionUtils.isEmpty(committingSessions)) {
             return;
         }
+
         long now = System.currentTimeMillis();
         for (GlobalSession committingSession : committingSessions) {
             try {
@@ -330,11 +364,11 @@ public class DefaultCoordinator extends AbstractTCInboundHandler
                     LOGGER.error("GlobalSession commit retry timeout [{}]", committingSession.getXid());
                     continue;
                 }
+
                 committingSession.addSessionLifecycleListener(SessionHolder.getRootSessionManager());
                 core.doGlobalCommit(committingSession, true);
             } catch (TransactionException ex) {
-                LOGGER.info("Failed to retry committing [{}] {} {}",
-                    committingSession.getXid(), ex.getCode(), ex.getMessage());
+                LOGGER.info("Failed to retry committing [{}] {} {}", committingSession.getXid(), ex.getCode(), ex.getMessage());
             }
         }
     }
@@ -343,10 +377,10 @@ public class DefaultCoordinator extends AbstractTCInboundHandler
         /**
          * Start timing when the session begin
          */
-        if (timeout >= ALWAYS_RETRY_BOUNDARY &&
-            now - beginTime > timeout) {
+        if (timeout >= ALWAYS_RETRY_BOUNDARY && now - beginTime > timeout) {
             return true;
         }
+
         return false;
     }
 
@@ -354,18 +388,18 @@ public class DefaultCoordinator extends AbstractTCInboundHandler
      * Handle async committing.
      */
     protected void handleAsyncCommitting() {
-        Collection<GlobalSession> asyncCommittingSessions = SessionHolder.getAsyncCommittingSessionManager()
-            .allSessions();
+        Collection<GlobalSession> asyncCommittingSessions = SessionHolder.getAsyncCommittingSessionManager().allSessions();
+
         if (CollectionUtils.isEmpty(asyncCommittingSessions)) {
             return;
         }
+
         for (GlobalSession asyncCommittingSession : asyncCommittingSessions) {
             try {
                 asyncCommittingSession.addSessionLifecycleListener(SessionHolder.getRootSessionManager());
                 core.doGlobalCommit(asyncCommittingSession, true);
             } catch (TransactionException ex) {
-                LOGGER.info("Failed to async committing [{}] {} {}",
-                    asyncCommittingSession.getXid(), ex.getCode(), ex.getMessage());
+                LOGGER.info("Failed to async committing [{}] {} {}", asyncCommittingSession.getXid(), ex.getCode(), ex.getMessage());
             }
         }
     }
@@ -412,7 +446,8 @@ public class DefaultCoordinator extends AbstractTCInboundHandler
         if (!(request instanceof AbstractTransactionRequestToTC)) {
             throw new IllegalArgumentException();
         }
-        AbstractTransactionRequestToTC transactionRequest = (AbstractTransactionRequestToTC)request;
+
+        AbstractTransactionRequestToTC transactionRequest = (AbstractTransactionRequestToTC) request;
         transactionRequest.setTCInboundHandler(this);
 
         return transactionRequest.handle(context);
@@ -423,7 +458,6 @@ public class DefaultCoordinator extends AbstractTCInboundHandler
         if (!(response instanceof AbstractTransactionResponse)) {
             throw new IllegalArgumentException();
         }
-
     }
 
     @Override
@@ -433,6 +467,7 @@ public class DefaultCoordinator extends AbstractTCInboundHandler
         retryCommitting.shutdown();
         asyncCommitting.shutdown();
         timeoutCheck.shutdown();
+
         try {
             retryRollbacking.awaitTermination(TIMED_TASK_SHUTDOWN_MAX_WAIT_MILLS, TimeUnit.MILLISECONDS);
             retryCommitting.awaitTermination(TIMED_TASK_SHUTDOWN_MAX_WAIT_MILLS, TimeUnit.MILLISECONDS);
@@ -441,11 +476,14 @@ public class DefaultCoordinator extends AbstractTCInboundHandler
         } catch (InterruptedException ignore) {
 
         }
+
         // 2. second close netty flow
         if (messageSender instanceof RpcServer) {
-            ((RpcServer)messageSender).destroy();
+            ((RpcServer) messageSender).destroy();
         }
+
         // 3. last destroy SessionHolder
         SessionHolder.destory();
     }
+
 }

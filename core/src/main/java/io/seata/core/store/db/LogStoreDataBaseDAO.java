@@ -34,6 +34,8 @@ import io.seata.core.constants.ConfigurationKeys;
 import io.seata.core.store.BranchTransactionDO;
 import io.seata.core.store.GlobalTransactionDO;
 import io.seata.core.store.LogStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The type Log store data base dao.
@@ -43,6 +45,8 @@ import io.seata.core.store.LogStore;
  */
 @LoadLevel(name = "db")
 public class LogStoreDataBaseDAO implements LogStore, Initialize {
+
+    Logger logger = LoggerFactory.getLogger(LogStoreDataBaseDAO.class);
 
     /**
      * The constant CONFIG.
@@ -64,6 +68,9 @@ public class LogStoreDataBaseDAO implements LogStore, Initialize {
      */
     protected String brachTable;
 
+    /**
+     * mysql | oracle
+     */
     private String dbType;
 
     /**
@@ -83,14 +90,17 @@ public class LogStoreDataBaseDAO implements LogStore, Initialize {
 
     @Override
     public void init() {
-        globalTable = CONFIG.getConfig(ConfigurationKeys.STORE_DB_GLOBAL_TABLE,
-            ConfigurationKeys.STORE_DB_GLOBAL_DEFAULT_TABLE);
-        brachTable = CONFIG.getConfig(ConfigurationKeys.STORE_DB_BRANCH_TABLE,
-            ConfigurationKeys.STORE_DB_BRANCH_DEFAULT_TABLE);
+        // store.db.global.table    [default: global_table]
+        globalTable = CONFIG.getConfig(ConfigurationKeys.STORE_DB_GLOBAL_TABLE, ConfigurationKeys.STORE_DB_GLOBAL_DEFAULT_TABLE);
+        // store.db.branch.table    [default: branch_table]
+        brachTable = CONFIG.getConfig(ConfigurationKeys.STORE_DB_BRANCH_TABLE, ConfigurationKeys.STORE_DB_BRANCH_DEFAULT_TABLE);
+        // store.db.db-type
         dbType = CONFIG.getConfig(ConfigurationKeys.STORE_DB_TYPE);
+
         if (StringUtils.isBlank(dbType)) {
             throw new StoreException("there must be db type.");
         }
+
         if (logStoreDataSource == null) {
             throw new StoreException("there must be logStoreDataSource.");
         }
@@ -107,7 +117,14 @@ public class LogStoreDataBaseDAO implements LogStore, Initialize {
             conn.setAutoCommit(true);
             ps = conn.prepareStatement(sql);
             ps.setString(1, xid);
+
+            if (logger.isDebugEnabled()) {
+                System.err.println(sql);
+                System.err.println(xid);
+            }
+
             rs = ps.executeQuery();
+
             if (rs.next()) {
                 return convertGlobalTransactionDO(rs);
             } else {
@@ -148,7 +165,14 @@ public class LogStoreDataBaseDAO implements LogStore, Initialize {
             conn.setAutoCommit(true);
             ps = conn.prepareStatement(sql);
             ps.setLong(1, transactionId);
+
+            if (logger.isDebugEnabled()) {
+                System.err.println(sql);
+                System.err.println(transactionId);
+            }
+
             rs = ps.executeQuery();
+
             if (rs.next()) {
                 return convertGlobalTransactionDO(rs);
             } else {
@@ -202,11 +226,13 @@ public class LogStoreDataBaseDAO implements LogStore, Initialize {
                 int status = statuses[i];
                 ps.setInt(i + 1, status);
             }
+
             ps.setInt(statuses.length + 1, limit);
             rs = ps.executeQuery();
             while (rs.next()) {
                 ret.add(convertGlobalTransactionDO(rs));
             }
+
             return ret;
         } catch (SQLException e) {
             throw new StoreException(e);
@@ -241,6 +267,7 @@ public class LogStoreDataBaseDAO implements LogStore, Initialize {
             conn = logStoreDataSource.getConnection();
             conn.setAutoCommit(true);
             ps = conn.prepareStatement(sql);
+
             ps.setString(1, globalTransactionDO.getXid());
             ps.setLong(2, globalTransactionDO.getTransactionId());
             ps.setInt(3, globalTransactionDO.getStatus());
@@ -250,6 +277,7 @@ public class LogStoreDataBaseDAO implements LogStore, Initialize {
             ps.setInt(7, globalTransactionDO.getTimeout());
             ps.setLong(8, globalTransactionDO.getBeginTime());
             ps.setString(9, globalTransactionDO.getApplicationData());
+
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new StoreException(e);
@@ -465,6 +493,7 @@ public class LogStoreDataBaseDAO implements LogStore, Initialize {
 
     private GlobalTransactionDO convertGlobalTransactionDO(ResultSet rs) throws SQLException {
         GlobalTransactionDO globalTransactionDO = new GlobalTransactionDO();
+
         globalTransactionDO.setXid(rs.getString("xid"));
         globalTransactionDO.setStatus(rs.getInt("status"));
         globalTransactionDO.setApplicationId(rs.getString("application_id"));
@@ -476,11 +505,13 @@ public class LogStoreDataBaseDAO implements LogStore, Initialize {
         globalTransactionDO.setApplicationData(rs.getString("application_data"));
         globalTransactionDO.setGmtCreate(rs.getTimestamp("gmt_create"));
         globalTransactionDO.setGmtModified(rs.getTimestamp("gmt_modified"));
+
         return globalTransactionDO;
     }
 
     private BranchTransactionDO convertBranchTransactionDO(ResultSet rs) throws SQLException {
         BranchTransactionDO branchTransactionDO = new BranchTransactionDO();
+
         branchTransactionDO.setResourceGroupId(rs.getString("resource_group_id"));
         branchTransactionDO.setStatus(rs.getInt("status"));
         branchTransactionDO.setApplicationData(rs.getString("application_data"));
@@ -493,6 +524,7 @@ public class LogStoreDataBaseDAO implements LogStore, Initialize {
         branchTransactionDO.setTransactionId(rs.getLong("transaction_id"));
         branchTransactionDO.setGmtCreate(rs.getTimestamp("gmt_create"));
         branchTransactionDO.setGmtModified(rs.getTimestamp("gmt_modified"));
+
         return branchTransactionDO;
     }
 
@@ -531,4 +563,5 @@ public class LogStoreDataBaseDAO implements LogStore, Initialize {
     public void setDbType(String dbType) {
         this.dbType = dbType;
     }
+
 }

@@ -29,11 +29,11 @@ public interface TccAction {
      * Prepare boolean.
      *
      * @param actionContext the action context
-     * @param i the
+     * @param i             the
      * @return the boolean
      */
-    @TwoPhaseBusinessAction(name = "tccActionForSpringTest" , commitMethod = "commit", rollbackMethod = "rollback")
-    public boolean prepare(BusinessActionContext actionContext, int i);
+    @TwoPhaseBusinessAction(name = "tccActionForSpringTest", commitMethod = "commit", rollbackMethod = "rollback")
+    boolean prepare(BusinessActionContext actionContext, int i);
 
     /**
      * Commit boolean.
@@ -41,7 +41,7 @@ public interface TccAction {
      * @param actionContext the action context
      * @return the boolean
      */
-    public boolean commit(BusinessActionContext actionContext);
+    boolean commit(BusinessActionContext actionContext);
 
     /**
      * Rollback boolean.
@@ -49,5 +49,5 @@ public interface TccAction {
      * @param actionContext the action context
      * @return the boolean
      */
-    public boolean rollback(BusinessActionContext actionContext);
+    boolean rollback(BusinessActionContext actionContext);
 }

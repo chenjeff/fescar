@@ -71,8 +71,8 @@ public class DataSourceManager extends AbstractResourceManager implements Initia
     }
 
     @Override
-    public boolean lockQuery(BranchType branchType, String resourceId, String xid, String lockKeys)
-            throws TransactionException {
+    public boolean lockQuery(BranchType branchType, String resourceId, String xid, String lockKeys) throws TransactionException {
+
         try {
             GlobalLockQueryRequest request = new GlobalLockQueryRequest();
             request.setXid(xid);
@@ -83,23 +83,22 @@ public class DataSourceManager extends AbstractResourceManager implements Initia
             if (RootContext.inGlobalTransaction()) {
                 response = (GlobalLockQueryResponse) RmRpcClient.getInstance().sendMsgWithResponse(request);
             } else if (RootContext.requireGlobalLock()) {
-                response = (GlobalLockQueryResponse) RmRpcClient.getInstance().sendMsgWithResponse(loadBalance(),
-                        request, NettyClientConfig.getRpcRequestTimeout());
+                response = (GlobalLockQueryResponse) RmRpcClient.getInstance()
+                        .sendMsgWithResponse(loadBalance(), request, NettyClientConfig.getRpcRequestTimeout());
             } else {
                 throw new RuntimeException("unknow situation!");
             }
 
             if (response.getResultCode() == ResultCode.Failed) {
-                throw new TransactionException(response.getTransactionExceptionCode(),
-                        "Response[" + response.getMsg() + "]");
+                throw new TransactionException(response.getTransactionExceptionCode(), "Response[" + response.getMsg() + "]");
             }
+
             return response.isLockable();
         } catch (TimeoutException toe) {
             throw new TransactionException(TransactionExceptionCode.IO, "RPC Timeout", toe);
         } catch (RuntimeException rex) {
             throw new TransactionException(TransactionExceptionCode.LockableCheckFailed, "Runtime", rex);
         }
-
     }
 
     @SuppressWarnings("unchecked")
@@ -112,9 +111,11 @@ public class DataSourceManager extends AbstractResourceManager implements Initia
         } catch (Exception ignore) {
             LOGGER.error(ignore.getMessage());
         }
+
         if (address == null) {
             throw new FrameworkException(NoAvailableService);
         }
+
         return NetUtil.toStringAddress(address);
     }
 
@@ -173,6 +174,7 @@ public class DataSourceManager extends AbstractResourceManager implements Initia
         if (dataSourceProxy == null) {
             throw new ShouldNeverHappenException();
         }
+
         try {
             UndoLogManager.undo(dataSourceProxy, xid, branchId);
         } catch (TransactionException te) {
@@ -182,8 +184,8 @@ public class DataSourceManager extends AbstractResourceManager implements Initia
                 return BranchStatus.PhaseTwo_RollbackFailed_Retryable;
             }
         }
-        return BranchStatus.PhaseTwo_Rollbacked;
 
+        return BranchStatus.PhaseTwo_Rollbacked;
     }
 
     @Override

@@ -18,6 +18,8 @@ package io.seata.tm;
 import io.seata.core.rpc.netty.TmRpcClient;
 
 /**
+ * [TM] Transaction Manager
+ * <p>
  * The type Tm client.
  *
  * @author jimin.jm @alibaba-inc.com

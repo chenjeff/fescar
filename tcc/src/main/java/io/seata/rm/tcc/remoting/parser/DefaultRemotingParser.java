@@ -93,6 +93,7 @@ public class DefaultRemotingParser {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -143,6 +144,7 @@ public class DefaultRemotingParser {
                 ret.add(s);
             }
         }
+
         if (ret.size() == 1) {
             return ret.get(0);
         } else if (ret.size() > 1) {
@@ -164,6 +166,7 @@ public class DefaultRemotingParser {
         if (remotingBeanDesc == null) {
             return null;
         }
+
         remotingServiceMap.put(beanName, remotingBeanDesc);
 
         Class<?> interfaceClass = remotingBeanDesc.getInterfaceClass();
@@ -175,20 +178,26 @@ public class DefaultRemotingParser {
                 for (Method m : methods) {
                     TwoPhaseBusinessAction twoPhaseBusinessAction = m.getAnnotation(TwoPhaseBusinessAction.class);
                     if (twoPhaseBusinessAction != null) {
-                        //
+                        // two phase action
                         TCCResource tccResource = new TCCResource();
+                        // TCC bean name, must be unique (getResourceId)
                         tccResource.setActionName(twoPhaseBusinessAction.name());
                         tccResource.setTargetBean(targetBean);
                         tccResource.setPrepareMethod(m);
+
+                        // commit method name
                         tccResource.setCommitMethodName(twoPhaseBusinessAction.commitMethod());
-                        tccResource.setCommitMethod(ReflectionUtil
-                            .getMethod(interfaceClass, twoPhaseBusinessAction.commitMethod(),
-                                new Class[] {BusinessActionContext.class}));
+                        tccResource.setCommitMethod(ReflectionUtil.getMethod(interfaceClass,
+                                twoPhaseBusinessAction.commitMethod(),
+                                new Class[]{BusinessActionContext.class}));
+
+                        // rollback method name
                         tccResource.setRollbackMethodName(twoPhaseBusinessAction.rollbackMethod());
-                        tccResource.setRollbackMethod(ReflectionUtil
-                            .getMethod(interfaceClass, twoPhaseBusinessAction.rollbackMethod(),
-                                new Class[] {BusinessActionContext.class}));
-                        //registry tcc resource
+                        tccResource.setRollbackMethod(ReflectionUtil.getMethod(interfaceClass,
+                                twoPhaseBusinessAction.rollbackMethod(),
+                                new Class[]{BusinessActionContext.class}));
+
+                        // {client} registry tcc resource
                         DefaultResourceManager.get().registerResource(tccResource);
                     }
                 }
@@ -196,10 +205,12 @@ public class DefaultRemotingParser {
                 throw new FrameworkException(t, "parser remting service error");
             }
         }
+
         if (isReference(bean, beanName)) {
-            //reference bean， TCC proxy
+            // reference bean， TCC proxy
             remotingBeanDesc.setReference(true);
         }
+
         return remotingBeanDesc;
     }
 

@@ -41,4 +41,5 @@ public interface WhereRecognizer extends SQLRecognizer {
      * @return the where condition
      */
     String getWhereCondition();
+
 }

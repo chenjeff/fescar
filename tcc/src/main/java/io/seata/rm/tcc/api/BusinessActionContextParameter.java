@@ -59,4 +59,5 @@ public @interface BusinessActionContextParameter {
      * @return boolean boolean
      */
     boolean isParamInProperty() default false;
+    
 }

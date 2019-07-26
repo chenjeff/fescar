@@ -27,9 +27,14 @@ import io.seata.server.UUIDGenerator;
  */
 public class SessionHelper {
 
-    private SessionHelper() {}
+    private SessionHelper() {
+    }
 
-    public static BranchSession newBranchByGlobal(GlobalSession globalSession, BranchType branchType, String resourceId, String lockKeys, String clientId) {
+    public static BranchSession newBranchByGlobal(GlobalSession globalSession,
+                                                  BranchType branchType,
+                                                  String resourceId,
+                                                  String lockKeys,
+                                                  String clientId) {
         return newBranchByGlobal(globalSession, branchType, resourceId, null, lockKeys, clientId);
     }
 
@@ -43,8 +48,13 @@ public class SessionHelper {
      * @param clientId      the client id
      * @return the branch session
      */
-    public static BranchSession newBranchByGlobal(GlobalSession globalSession, BranchType branchType, String resourceId,
-            String applicationData, String lockKeys, String clientId) {
+    public static BranchSession newBranchByGlobal(GlobalSession globalSession,
+                                                  BranchType branchType,
+                                                  String resourceId,
+                                                  String applicationData,
+                                                  String lockKeys,
+                                                  String clientId) {
+
         BranchSession branchSession = new BranchSession();
 
         branchSession.setXid(globalSession.getXid());
@@ -94,6 +104,7 @@ public class SessionHelper {
         } else {
             globalSession.changeStatus(GlobalStatus.Rollbacked);
         }
+
         globalSession.end();
     }
 
@@ -110,6 +121,7 @@ public class SessionHelper {
         } else {
             globalSession.changeStatus(GlobalStatus.RollbackFailed);
         }
+
         globalSession.end();
     }
 
@@ -119,4 +131,5 @@ public class SessionHelper {
                 || status == GlobalStatus.TimeoutRollbacking
                 || status == GlobalStatus.TimeoutRollbackRetrying;
     }
+
 }

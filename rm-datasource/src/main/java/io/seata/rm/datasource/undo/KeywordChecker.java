@@ -37,4 +37,5 @@ public interface KeywordChecker {
      * @return string
      */
     String checkAndReplace(String fieldOrTableName);
+
 }

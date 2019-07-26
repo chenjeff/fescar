@@ -72,29 +72,34 @@ public class LockerFactory {
      * @return the lock manager
      */
     public static synchronized final Locker get(BranchSession branchSession) {
+        /**
+         * lock.mode
+         */
         String lockMode = CONFIG.getConfig(ConfigurationKeys.LOCK_MODE);
         if (LockMode.DB.name().equalsIgnoreCase(lockMode)) {
             if (lockerMap.get(lockMode) != null) {
                 return lockerMap.get(lockMode);
             }
-            //init dataSource
+
+            // init dataSource
             String datasourceType = CONFIG.getConfig(ConfigurationKeys.STORE_DB_DATASOURCE_TYPE);
-            DataSourceGenerator dataSourceGenerator = EnhancedServiceLoader.load(DataSourceGenerator.class,
-                datasourceType);
+            DataSourceGenerator dataSourceGenerator = EnhancedServiceLoader.load(DataSourceGenerator.class, datasourceType);
             DataSource logStoreDataSource = dataSourceGenerator.generateDataSource();
-            locker = EnhancedServiceLoader.load(Locker.class, lockMode, new Class[] {DataSource.class},
-                new Object[] {logStoreDataSource});
+            locker = EnhancedServiceLoader.load(Locker.class, lockMode, new Class[]{DataSource.class},
+                    new Object[]{logStoreDataSource});
+
             lockerMap.put(lockMode, locker);
         } else if (LockMode.MEMORY.name().equalsIgnoreCase(lockMode)) {
             if (branchSession == null) {
                 throw new IllegalArgumentException("branchSession can be null for memory lockMode.");
             }
             locker = EnhancedServiceLoader.load(Locker.class, lockMode,
-                new Class[] {BranchSession.class}, new Object[] {branchSession});
+                    new Class[]{BranchSession.class}, new Object[]{branchSession});
         } else {
-            //other locker
+            // other locker
             locker = EnhancedServiceLoader.load(Locker.class, lockMode);
         }
+
         return locker;
     }
 

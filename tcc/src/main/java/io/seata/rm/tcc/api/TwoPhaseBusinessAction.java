@@ -27,19 +27,23 @@ import java.lang.annotation.Target;
  * @author zhangsen
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.METHOD })
+@Target({ElementType.METHOD})
 @Inherited
 public @interface TwoPhaseBusinessAction {
 
     /**
+     * 从源码上看 TCCResourceManager | DataSourceManager 通过SPI 注册至 DefaultResourceManager
+     * 而DefaultResourceManager是通过内部类实现的单例,
+     * TCCResourceManager | DataSourceManager 内部使用ConcurrentHashMap做缓存, 因此 name 应用内应该是不允许重复的。
+     * <p>
      * TCC bean name, must be unique
      *
      * @return the string
      */
-    String name() ;
+    String name();
 
     /**
-     * commit methed name
+     * commit method name
      *
      * @return the string
      */

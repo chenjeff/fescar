@@ -24,6 +24,7 @@ import java.lang.reflect.Method;
  * @date 2018 /12/28
  */
 public class MethodDesc {
+
     private GlobalTransactional transactionAnnotation;
     private Method method;
 
@@ -73,4 +74,5 @@ public class MethodDesc {
     public void setMethod(Method method) {
         this.method = method;
     }
+
 }

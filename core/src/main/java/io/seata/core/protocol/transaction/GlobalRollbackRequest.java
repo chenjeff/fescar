@@ -23,6 +23,7 @@ import io.seata.core.rpc.RpcContext;
  * @author jimin.jm @alibaba-inc.com
  */
 public class GlobalRollbackRequest extends AbstractGlobalEndRequest {
+
     @Override
     public short getTypeCode() {
         return TYPE_GLOBAL_ROLLBACK;
@@ -32,4 +33,5 @@ public class GlobalRollbackRequest extends AbstractGlobalEndRequest {
     public AbstractTransactionResponse handle(RpcContext rpcContext) {
         return handler.handle(this, rpcContext);
     }
+
 }

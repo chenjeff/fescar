@@ -50,16 +50,17 @@ public class DataBaseLocker extends AbstractLocker {
      * @param logStoreDataSource the log store data source
      */
     public DataBaseLocker(DataSource logStoreDataSource) {
-        lockStore = EnhancedServiceLoader.load(LockStore.class, LockMode.DB.name(), new Class[] {DataSource.class},
-            new Object[] {logStoreDataSource});
+        lockStore = EnhancedServiceLoader.load(LockStore.class, LockMode.DB.name(),
+                new Class[]{DataSource.class}, new Object[]{logStoreDataSource});
     }
 
     @Override
     public boolean acquireLock(List<RowLock> locks) {
         if (CollectionUtils.isEmpty(locks)) {
-            //no lock
+            // no lock
             return true;
         }
+
         try {
             return lockStore.acquireLock(convertToLockDO(locks));
         } catch (Exception t) {
@@ -71,9 +72,10 @@ public class DataBaseLocker extends AbstractLocker {
     @Override
     public boolean releaseLock(List<RowLock> locks) {
         if (CollectionUtils.isEmpty(locks)) {
-            //no lock
+            // no lock
             return true;
         }
+
         try {
             return lockStore.unLock(convertToLockDO(locks));
         } catch (Exception t) {
@@ -100,4 +102,5 @@ public class DataBaseLocker extends AbstractLocker {
     public void setLockStore(LockStore lockStore) {
         this.lockStore = lockStore;
     }
+
 }

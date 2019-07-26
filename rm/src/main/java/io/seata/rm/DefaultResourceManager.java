@@ -39,8 +39,7 @@ public class DefaultResourceManager implements ResourceManager {
     /**
      * all resource managers
      */
-    protected static Map<BranchType, ResourceManager> resourceManagers
-        = new ConcurrentHashMap<>();
+    protected static Map<BranchType, ResourceManager> resourceManagers = new ConcurrentHashMap<>();
 
     private DefaultResourceManager() {
         initResourceManagers();
@@ -66,7 +65,7 @@ public class DefaultResourceManager implements ResourceManager {
     }
 
     protected void initResourceManagers() {
-        //init all resource managers
+        // init all resource managers
         List<ResourceManager> allResourceManagers = EnhancedServiceLoader.loadAll(ResourceManager.class);
         if (CollectionUtils.isNotEmpty(allResourceManagers)) {
             for (ResourceManager rm : allResourceManagers) {
@@ -76,36 +75,47 @@ public class DefaultResourceManager implements ResourceManager {
     }
 
     @Override
-    public BranchStatus branchCommit(BranchType branchType, String xid, long branchId,
-                                     String resourceId, String applicationData)
-        throws TransactionException {
+    public BranchStatus branchCommit(BranchType branchType,
+                                     String xid,
+                                     long branchId,
+                                     String resourceId,
+                                     String applicationData) throws TransactionException {
         return getResourceManager(branchType).branchCommit(branchType, xid, branchId, resourceId, applicationData);
     }
 
     @Override
-    public BranchStatus branchRollback(BranchType branchType, String xid, long branchId,
-                                       String resourceId, String applicationData)
-        throws TransactionException {
+    public BranchStatus branchRollback(BranchType branchType,
+                                       String xid,
+                                       long branchId,
+                                       String resourceId,
+                                       String applicationData) throws TransactionException {
         return getResourceManager(branchType).branchRollback(branchType, xid, branchId, resourceId, applicationData);
     }
 
     @Override
-    public Long branchRegister(BranchType branchType, String resourceId,
-                               String clientId, String xid, String applicationData, String lockKeys)
-        throws TransactionException {
-        return getResourceManager(branchType).branchRegister(branchType, resourceId, clientId, xid, applicationData,
-            lockKeys);
+    public Long branchRegister(BranchType branchType,
+                               String resourceId,
+                               String clientId,
+                               String xid,
+                               String applicationData,
+                               String lockKeys) throws TransactionException {
+        return getResourceManager(branchType).branchRegister(branchType, resourceId, clientId, xid, applicationData, lockKeys);
     }
 
     @Override
-    public void branchReport(BranchType branchType, String xid, long branchId, BranchStatus status,
+    public void branchReport(BranchType branchType,
+                             String xid,
+                             long branchId,
+                             BranchStatus status,
                              String applicationData) throws TransactionException {
         getResourceManager(branchType).branchReport(branchType, xid, branchId, status, applicationData);
     }
 
     @Override
-    public boolean lockQuery(BranchType branchType, String resourceId,
-                             String xid, String lockKeys) throws TransactionException {
+    public boolean lockQuery(BranchType branchType,
+                             String resourceId,
+                             String xid,
+                             String lockKeys) throws TransactionException {
         return getResourceManager(branchType).lockQuery(branchType, resourceId, xid, lockKeys);
     }
 
@@ -142,6 +152,7 @@ public class DefaultResourceManager implements ResourceManager {
         if (rm == null) {
             throw new FrameworkException("No ResourceManager for BranchType:" + branchType.name());
         }
+
         return rm;
     }
 

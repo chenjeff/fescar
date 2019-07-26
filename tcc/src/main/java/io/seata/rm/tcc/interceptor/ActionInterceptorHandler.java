@@ -55,24 +55,27 @@ public class ActionInterceptorHandler {
      * @return map map
      * @throws Throwable the throwable
      */
-    public Map<String, Object> proceed(Method method, Object[] arguments, TwoPhaseBusinessAction businessAction,
+    public Map<String, Object> proceed(Method method,
+                                       Object[] arguments,
+                                       TwoPhaseBusinessAction businessAction,
                                        Callback<Object> targetCallback) throws Throwable {
+
         Map<String, Object> ret = new HashMap<String, Object>(16);
 
-        //TCC name
+        // TCC name
         String actionName = businessAction.name();
         String xid = RootContext.getXID();
         BusinessActionContext actionContext = new BusinessActionContext();
         actionContext.setXid(xid);
-        //set action anme
+        // set action anme
         actionContext.setActionName(actionName);
-        //TODO services
+        // TODO services
 
-        //Creating Branch Record
+        // Creating Branch Record & tcc context save 2 tcc server
         String branchId = doTccActionLogStore(method, arguments, businessAction, actionContext);
         actionContext.setBranchId(branchId);
 
-        //set the parameter whose type is BusinessActionContext
+        // set the parameter whose type is BusinessActionContext
         Class<?>[] types = method.getParameterTypes();
         int argIndex = 0;
         for (Class<?> cls : types) {
@@ -82,10 +85,13 @@ public class ActionInterceptorHandler {
             }
             argIndex++;
         }
-        //the final parameters of the try method
+
+        // the final parameters of the try method
         ret.put(Constants.TCC_METHOD_ARGUMENTS, arguments);
-        //the final result
+
+        // the final result
         ret.put(Constants.TCC_METHOD_RESULT, targetCallback.execute());
+
         return ret;
     }
 
@@ -98,28 +104,33 @@ public class ActionInterceptorHandler {
      * @param actionContext  the action context
      * @return the string
      */
-    protected String doTccActionLogStore(Method method, Object[] arguments, TwoPhaseBusinessAction businessAction,
+    protected String doTccActionLogStore(Method method,
+                                         Object[] arguments,
+                                         TwoPhaseBusinessAction businessAction,
                                          BusinessActionContext actionContext) {
+
         String actionName = actionContext.getActionName();
         String xid = actionContext.getXid();
-        //
+        // 构建参数副本
         Map<String, Object> context = fetchActionRequestContext(method, arguments);
         context.put(Constants.ACTION_START_TIME, System.currentTimeMillis());
 
-        //init business context
+        // init business context
         initBusinessContext(context, method, businessAction);
-        //Init running environment context
+
+        // Init running environment context
         initFrameworkContext(context);
         actionContext.setActionContext(context);
 
-        //init applicationData
+        // init applicationData
         Map<String, Object> applicationContext = new HashMap<String, Object>(4);
         applicationContext.put(Constants.TCC_ACTION_CONTEXT, context);
         String applicationContextStr = JSON.toJSONString(applicationContext);
         try {
-            //registry branch record
+            // registry branch record
             Long branchId = DefaultResourceManager.get().branchRegister(BranchType.TCC, actionName, null, xid,
-                applicationContextStr, null);
+                    applicationContextStr, null);
+
             return String.valueOf(branchId);
         } catch (Throwable t) {
             String msg = "TCC branch Register error, xid:" + xid;
@@ -148,14 +159,15 @@ public class ActionInterceptorHandler {
      * @param method         the method
      * @param businessAction the business action
      */
-    protected void initBusinessContext(Map<String, Object> context, Method method,
-                                       TwoPhaseBusinessAction businessAction) {
+    protected void initBusinessContext(Map<String, Object> context, Method method, TwoPhaseBusinessAction businessAction) {
+
         if (method != null) {
-            //the phase one method name
+            // the phase one method name
             context.put(Constants.PREPARE_METHOD, method.getName());
         }
+
         if (businessAction != null) {
-            //the phase two method name
+            // the phase two method name
             context.put(Constants.COMMIT_METHOD, businessAction.commitMethod());
             context.put(Constants.ROLLBACK_METHOD, businessAction.rollbackMethod());
             context.put(Constants.ACTION_NAME, businessAction.name());
@@ -176,15 +188,16 @@ public class ActionInterceptorHandler {
         for (int i = 0; i < parameterAnnotations.length; i++) {
             for (int j = 0; j < parameterAnnotations[i].length; j++) {
                 if (parameterAnnotations[i][j] instanceof BusinessActionContextParameter) {
-                    BusinessActionContextParameter param = (BusinessActionContextParameter)parameterAnnotations[i][j];
+                    BusinessActionContextParameter param = (BusinessActionContextParameter) parameterAnnotations[i][j];
                     if (null == arguments[i]) {
                         throw new IllegalArgumentException("@BusinessActionContextParameter 's params can not null");
                     }
+
                     Object paramObject = arguments[i];
                     int index = param.index();
-                    //List, get by index
+                    // List, get by index
                     if (index >= 0) {
-                        Object targetParam = ((List<Object>)paramObject).get(index);
+                        Object targetParam = ((List<Object>) paramObject).get(index);
                         if (param.isParamInProperty()) {
                             context.putAll(ActionContextUtil.fetchContextFromObject(targetParam));
                         } else {
@@ -200,6 +213,7 @@ public class ActionInterceptorHandler {
                 }
             }
         }
+
         return context;
     }
 

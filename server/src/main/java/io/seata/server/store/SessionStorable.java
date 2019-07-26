@@ -35,4 +35,5 @@ public interface SessionStorable {
      * @param src the src
      */
     void decode(byte[] src);
+
 }

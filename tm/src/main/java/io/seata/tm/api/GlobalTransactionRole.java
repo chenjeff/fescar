@@ -24,13 +24,16 @@ public enum GlobalTransactionRole {
 
     /**
      * The Launcher.
+     * <p>
+     * The one begins the current global transaction.
      */
-    // The one begins the current global transaction.
     Launcher,
 
     /**
      * The Participant.
+     * <p>
+     * The one just joins into a existing global transaction.
      */
-    // The one just joins into a existing global transaction.
     Participant
+
 }

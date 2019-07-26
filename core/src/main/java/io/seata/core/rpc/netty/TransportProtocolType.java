@@ -22,6 +22,7 @@ package io.seata.core.rpc.netty;
  * @date 2018 /9/10
  */
 public enum TransportProtocolType {
+
     /**
      * Tcp transport protocol type.
      */
@@ -31,6 +32,7 @@ public enum TransportProtocolType {
      * Udt transport protocol type.
      */
     UDT("udt"),
+
     /**
      * Unix domain socket transport protocol type.
      */
@@ -44,4 +46,5 @@ public enum TransportProtocolType {
     TransportProtocolType(String name) {
         this.name = name;
     }
+
 }

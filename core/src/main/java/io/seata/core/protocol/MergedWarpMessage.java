@@ -51,7 +51,7 @@ public class MergedWarpMessage extends AbstractMessage implements Serializable, 
     public byte[] encode() {
         int bufferSize = msgs.size() * 1024;
         ByteBuffer byteBuffer = ByteBuffer.allocate(bufferSize);
-        byteBuffer.putShort((short)msgs.size());
+        byteBuffer.putShort((short) msgs.size());
         for (AbstractMessage msg : msgs) {
             //msg.setChannelHandlerContext(ctx);
             byte[] data = msg.encode();
@@ -96,7 +96,7 @@ public class MergedWarpMessage extends AbstractMessage implements Serializable, 
             short typeCode = byteBuffer.getShort();
             MergedMessage message = getMergeRequestInstanceByCode(typeCode);
             message.decode(byteBuffer);
-            msgs.add((AbstractMessage)message);
+            msgs.add((AbstractMessage) message);
         }
     }
 

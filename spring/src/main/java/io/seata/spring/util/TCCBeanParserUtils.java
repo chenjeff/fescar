@@ -40,23 +40,26 @@ public class TCCBeanParserUtils {
      * @return boolean boolean
      */
     public static boolean isTccAutoProxy(Object bean, String beanName, ApplicationContext applicationContext) {
-        RemotingDesc remotingDesc = null;
+        RemotingDesc remotingDesc;
+
+        // get RemotingDesc & bean is {service, reference}
         boolean isRemotingBean = parserRemotingServiceInfo(bean, beanName);
-        //is remoting bean
+
+        // is remoting bean
         if (isRemotingBean) {
             remotingDesc = DefaultRemotingParser.get().getRemotingBeanDesc(beanName);
             if (remotingDesc != null && remotingDesc.getProtocol() == Protocols.IN_JVM) {
-                //LocalTCC
+                // LocalTCC
                 return isTccProxyTargetBean(remotingDesc);
             } else {
                 // sofa:reference / dubbo:reference, factory bean
                 return false;
             }
         } else {
-            //get RemotingBean description
+            // get RemotingBean description
             remotingDesc = DefaultRemotingParser.get().getRemotingBeanDesc(beanName);
             if (remotingDesc == null) {
-                //check FactoryBean
+                // check FactoryBean
                 if (isRemotingFactoryBean(bean, beanName, applicationContext)) {
                     remotingDesc = DefaultRemotingParser.get().getRemotingBeanDesc(beanName);
                     return isTccProxyTargetBean(remotingDesc);
@@ -77,22 +80,24 @@ public class TCCBeanParserUtils {
      * @param applicationContext the application context
      * @return boolean boolean
      */
-    protected static boolean isRemotingFactoryBean(Object bean, String beanName,
-                                                   ApplicationContext applicationContext) {
+    protected static boolean isRemotingFactoryBean(Object bean, String beanName, ApplicationContext applicationContext) {
         if (!SpringProxyUtils.isProxy(bean)) {
             return false;
         }
-        //the FactoryBean of proxy bean
+
+        // the FactoryBean of proxy bean
         String factoryBeanName = new StringBuilder().append("&").append(beanName).toString();
         Object factoryBean = null;
         if (applicationContext != null && applicationContext.containsBean(factoryBeanName)) {
             factoryBean = applicationContext.getBean(factoryBeanName);
         }
-        //not factory bean，needn't proxy
+
+        // not factory bean，needn't proxy
         if (factoryBean == null) {
             return false;
         }
-        //get FactoryBean info
+
+        // get FactoryBean info
         return parserRemotingServiceInfo(factoryBean, beanName);
     }
 
@@ -106,11 +111,13 @@ public class TCCBeanParserUtils {
         if (remotingDesc == null) {
             return false;
         }
-        //check if it is TCC bean
+
+        // check if it is TCC bean
         boolean isTccClazz = false;
         Class<?> tccInterfaceClazz = remotingDesc.getInterfaceClass();
         Method[] methods = tccInterfaceClazz.getMethods();
-        TwoPhaseBusinessAction twoPhaseBusinessAction = null;
+
+        TwoPhaseBusinessAction twoPhaseBusinessAction;
         for (Method method : methods) {
             twoPhaseBusinessAction = method.getAnnotation(TwoPhaseBusinessAction.class);
             if (twoPhaseBusinessAction != null) {
@@ -118,15 +125,18 @@ public class TCCBeanParserUtils {
                 break;
             }
         }
+
         if (!isTccClazz) {
             return false;
         }
+
         short protocols = remotingDesc.getProtocol();
-        //LocalTCC
+        // LocalTCC
         if (Protocols.IN_JVM == protocols) {
-            //in jvm TCC bean , AOP
+            // in jvm TCC bean , AOP
             return true;
         }
+
         // sofa:reference /  dubbo:reference, AOP
         return remotingDesc.isReference();
     }
@@ -139,9 +149,12 @@ public class TCCBeanParserUtils {
      * @return if sofa:service、sofa:reference、dubbo:reference、dubbo:service return true，else return false
      */
     protected static boolean parserRemotingServiceInfo(Object bean, String beanName) {
+        // is rpc service or reference
         if (DefaultRemotingParser.get().isRemoting(bean, beanName)) {
+            // RemotingDesc is not null
             return null != DefaultRemotingParser.get().parserRemotingServiceInfo(bean, beanName);
         }
+
         return false;
     }
 
@@ -154,4 +167,5 @@ public class TCCBeanParserUtils {
     public static RemotingDesc getRemotingDesc(String beanName) {
         return DefaultRemotingParser.get().getRemotingBeanDesc(beanName);
     }
+
 }

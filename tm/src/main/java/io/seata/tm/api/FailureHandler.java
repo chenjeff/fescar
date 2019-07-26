@@ -45,4 +45,5 @@ public interface FailureHandler {
      * @param cause the cause
      */
     void onRollbackFailure(GlobalTransaction tx, Throwable cause);
+
 }

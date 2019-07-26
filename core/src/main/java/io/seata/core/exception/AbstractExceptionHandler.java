@@ -78,7 +78,7 @@ public abstract class AbstractExceptionHandler {
     }
 
     public abstract class AbstractCallback<T extends AbstractTransactionRequest, S extends AbstractTransactionResponse>
-        implements Callback<T, S> {
+            implements Callback<T, S> {
 
         @Override
         public void onSuccess(T request, S response) {
@@ -86,8 +86,7 @@ public abstract class AbstractExceptionHandler {
         }
 
         @Override
-        public void onTransactionException(T request, S response,
-            TransactionException tex) {
+        public void onTransactionException(T request, S response, TransactionException tex) {
             response.setTransactionExceptionCode(tex.getCode());
             response.setResultCode(ResultCode.Failed);
             response.setMsg("TransactionException[" + tex.getMessage() + "]");
@@ -107,8 +106,7 @@ public abstract class AbstractExceptionHandler {
      * @param request  the request
      * @param response the response
      */
-    public void exceptionHandleTemplate(Callback callback, AbstractTransactionRequest request,
-        AbstractTransactionResponse response) {
+    public void exceptionHandleTemplate(Callback callback, AbstractTransactionRequest request, AbstractTransactionResponse response) {
         try {
             callback.execute(request, response);
             callback.onSuccess(request, response);

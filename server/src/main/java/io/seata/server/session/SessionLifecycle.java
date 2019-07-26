@@ -86,4 +86,5 @@ public interface SessionLifecycle {
      * @throws TransactionException the transaction exception
      */
     void end() throws TransactionException;
+
 }

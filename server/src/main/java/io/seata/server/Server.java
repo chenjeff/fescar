@@ -40,10 +40,15 @@ public class Server {
     private static final int MAX_TASK_QUEUE_SIZE = 20000;
     private static final int KEEP_ALIVE_TIME = 500;
     private static final int SERVER_DEFAULT_PORT = 8091;
-    private static final ThreadPoolExecutor WORKING_THREADS = new ThreadPoolExecutor(MIN_SERVER_POOL_SIZE,
-        MAX_SERVER_POOL_SIZE, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
-        new LinkedBlockingQueue<>(MAX_TASK_QUEUE_SIZE),
-        new NamedThreadFactory("ServerHandlerThread", MAX_SERVER_POOL_SIZE), new ThreadPoolExecutor.CallerRunsPolicy());
+
+    private static final ThreadPoolExecutor WORKING_THREADS = new ThreadPoolExecutor(
+            MIN_SERVER_POOL_SIZE,
+            MAX_SERVER_POOL_SIZE,
+            KEEP_ALIVE_TIME,
+            TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(MAX_TASK_QUEUE_SIZE),
+            new NamedThreadFactory("ServerHandlerThread", MAX_SERVER_POOL_SIZE),
+            new ThreadPoolExecutor.CallerRunsPolicy());
 
     /**
      * The entry point of application.
@@ -55,26 +60,33 @@ public class Server {
         RpcServer rpcServer = new RpcServer(WORKING_THREADS);
 
         int port = SERVER_DEFAULT_PORT;
-        //server port
+        // server port
         if (args.length > 0) {
             try {
+                // args index: 0
                 port = Integer.parseInt(args[0]);
             } catch (NumberFormatException e) {
                 System.err.println("Usage: sh services-server.sh $LISTEN_PORT $PATH_FOR_PERSISTENT_DATA");
                 System.exit(0);
             }
         }
+
         rpcServer.setListenPort(port);
 
-        //log store mode : file、db
+        // log store mode : file、db
         String storeMode = null;
         if (args.length > 1) {
+            // args index: 1
             storeMode = args[1];
         }
 
+        // server node id 为什么写死了?
+        // server node id 限定了 uuid 的取值范围, 分布式多节点会产生重复的 uuid ?
         UUIDGenerator.init(1);
+
         SessionHolder.init(storeMode);
 
+        // 默认协调员 分布式事务协调实现类
         DefaultCoordinator coordinator = new DefaultCoordinator(rpcServer);
         coordinator.init();
         rpcServer.setHandler(coordinator);
@@ -86,10 +98,12 @@ public class Server {
         } else {
             XID.setIpAddress(NetUtil.getLocalIp());
         }
+
         XID.setPort(rpcServer.getListenPort());
 
         rpcServer.init();
 
         System.exit(0);
     }
+
 }

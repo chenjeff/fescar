@@ -32,9 +32,12 @@ public class UUIDGenerator {
 
     private static final AtomicLong UUID = new AtomicLong(1000);
     private static int serverNodeId = 1;
-    private static final long UUID_INTERNAL = 2000000000;
+    private static final long UUID_INTERNAL = 2_000_000_000;
 
     /**
+     * UUID_INTERNAL * serverNodeId < uuid <= UUID_INTERNAL * (serverNodeId + 1)
+     * 限定了每个服务的取值范围
+     * <p>
      * Generate uuid long.
      *
      * @return the long
@@ -49,6 +52,7 @@ public class UUIDGenerator {
                 }
             }
         }
+
         return id;
     }
 
@@ -93,4 +97,5 @@ public class UUIDGenerator {
             throw new ShouldNeverHappenException(e);
         }
     }
+
 }

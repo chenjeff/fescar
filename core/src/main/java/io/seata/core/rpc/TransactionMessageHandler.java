@@ -26,6 +26,7 @@ import io.seata.core.protocol.AbstractResultMessage;
 public interface TransactionMessageHandler {
 
     /**
+     *
      * On a request received.
      *
      * @param request received request message
@@ -35,6 +36,7 @@ public interface TransactionMessageHandler {
     AbstractResultMessage onRequest(AbstractMessage request, RpcContext context);
 
     /**
+     *
      * On a response received.
      *
      * @param response received response message

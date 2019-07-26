@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
  * @date 2018 /9/12
  */
 public abstract class AbstractRpcRemotingServer extends AbstractRpcRemoting implements RemotingServer {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractRpcRemotingServer.class);
     private final ServerBootstrap serverBootstrap;
     private final EventLoopGroup eventLoopGroupWorker;
@@ -60,10 +61,10 @@ public abstract class AbstractRpcRemotingServer extends AbstractRpcRemoting impl
      * @param listenPort the listen port
      */
     public void setListenPort(int listenPort) {
-
         if (listenPort <= 0) {
             throw new IllegalArgumentException("listen port: " + listenPort + " is invalid!");
         }
+
         this.listenPort = listenPort;
     }
 
@@ -93,26 +94,29 @@ public abstract class AbstractRpcRemotingServer extends AbstractRpcRemoting impl
      * @param handlers          the handlers
      */
     public AbstractRpcRemotingServer(final NettyServerConfig nettyServerConfig,
-                                     final ThreadPoolExecutor messageExecutor, final ChannelHandler... handlers) {
+                                     final ThreadPoolExecutor messageExecutor,
+                                     final ChannelHandler... handlers) {
         super(messageExecutor);
+
         this.serverBootstrap = new ServerBootstrap();
         this.nettyServerConfig = nettyServerConfig;
+
         if (NettyServerConfig.enableEpoll()) {
             this.eventLoopGroupBoss = new EpollEventLoopGroup(nettyServerConfig.getBossThreadSize(),
-                new NamedThreadFactory(nettyServerConfig.getBossThreadPrefix(), nettyServerConfig.getBossThreadSize()));
+                    new NamedThreadFactory(nettyServerConfig.getBossThreadPrefix(), nettyServerConfig.getBossThreadSize()));
             this.eventLoopGroupWorker = new EpollEventLoopGroup(nettyServerConfig.getServerWorkerThreads(),
-                new NamedThreadFactory(nettyServerConfig.getWorkerThreadPrefix(),
-                    nettyServerConfig.getServerWorkerThreads()));
+                    new NamedThreadFactory(nettyServerConfig.getWorkerThreadPrefix(), nettyServerConfig.getServerWorkerThreads()));
         } else {
             this.eventLoopGroupBoss = new NioEventLoopGroup(nettyServerConfig.getBossThreadSize(),
-                new NamedThreadFactory(nettyServerConfig.getBossThreadPrefix(), nettyServerConfig.getBossThreadSize()));
+                    new NamedThreadFactory(nettyServerConfig.getBossThreadPrefix(), nettyServerConfig.getBossThreadSize()));
             this.eventLoopGroupWorker = new NioEventLoopGroup(nettyServerConfig.getServerWorkerThreads(),
-                new NamedThreadFactory(nettyServerConfig.getWorkerThreadPrefix(),
-                    nettyServerConfig.getServerWorkerThreads()));
+                    new NamedThreadFactory(nettyServerConfig.getWorkerThreadPrefix(), nettyServerConfig.getServerWorkerThreads()));
         }
+
         if (null != handlers) {
             channelHandlers = handlers;
         }
+
         // init listenPort in constructor so that getListenPort() will always get the exact port
         setListenPort(nettyServerConfig.getDefaultListenPort());
     }
@@ -120,28 +124,28 @@ public abstract class AbstractRpcRemotingServer extends AbstractRpcRemoting impl
     @Override
     public void start() {
         this.serverBootstrap.group(this.eventLoopGroupBoss, this.eventLoopGroupWorker)
-            .channel(nettyServerConfig.SERVER_CHANNEL_CLAZZ)
-            .option(ChannelOption.SO_BACKLOG, nettyServerConfig.getSoBackLogSize())
-            .option(ChannelOption.SO_REUSEADDR, true)
-            .childOption(ChannelOption.SO_KEEPALIVE, true)
-            .childOption(ChannelOption.TCP_NODELAY, true)
-            .childOption(ChannelOption.SO_SNDBUF, nettyServerConfig.getServerSocketSendBufSize())
-            .childOption(ChannelOption.SO_RCVBUF, nettyServerConfig.getServerSocketResvBufSize())
-            .childOption(ChannelOption.WRITE_BUFFER_WATER_MARK,
-                new WriteBufferWaterMark(nettyServerConfig.getWriteBufferLowWaterMark(),
-                    nettyServerConfig.getWriteBufferHighWaterMark()))
-            .localAddress(new InetSocketAddress(listenPort))
-            .childHandler(new ChannelInitializer<SocketChannel>() {
-                @Override
-                public void initChannel(SocketChannel ch) {
-                    ch.pipeline().addLast(new IdleStateHandler(nettyServerConfig.getChannelMaxReadIdleSeconds(), 0, 0))
-                        .addLast(new MessageCodecHandler());
-                    if (null != channelHandlers) {
-                        addChannelPipelineLast(ch, channelHandlers);
-                    }
+                .channel(nettyServerConfig.SERVER_CHANNEL_CLAZZ)
+                .option(ChannelOption.SO_BACKLOG, nettyServerConfig.getSoBackLogSize())
+                // 允许重复绑定
+                .option(ChannelOption.SO_REUSEADDR, true)
+                .childOption(ChannelOption.SO_KEEPALIVE, true)
+                .childOption(ChannelOption.TCP_NODELAY, true)
+                .childOption(ChannelOption.SO_SNDBUF, nettyServerConfig.getServerSocketSendBufSize())
+                .childOption(ChannelOption.SO_RCVBUF, nettyServerConfig.getServerSocketResvBufSize())
+                .childOption(ChannelOption.WRITE_BUFFER_WATER_MARK,
+                        new WriteBufferWaterMark(nettyServerConfig.getWriteBufferLowWaterMark(), nettyServerConfig.getWriteBufferHighWaterMark()))
+                .localAddress(new InetSocketAddress(listenPort))
+                .childHandler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    public void initChannel(SocketChannel ch) {
+                        ch.pipeline().addLast(new IdleStateHandler(nettyServerConfig.getChannelMaxReadIdleSeconds(), 0, 0))
+                                .addLast(new MessageCodecHandler());
 
-                }
-            });
+                        if (null != channelHandlers) {
+                            addChannelPipelineLast(ch, channelHandlers);
+                        }
+                    }
+                });
 
         if (nettyServerConfig.isEnableServerPooledByteBufAllocator()) {
             this.serverBootstrap.childOption(ChannelOption.ALLOCATOR, NettyServerConfig.DIRECT_BYTE_BUF_ALLOCATOR);
@@ -156,7 +160,6 @@ public abstract class AbstractRpcRemotingServer extends AbstractRpcRemoting impl
         } catch (Exception exx) {
             throw new RuntimeException(exx);
         }
-
     }
 
     @Override
@@ -165,10 +168,11 @@ public abstract class AbstractRpcRemotingServer extends AbstractRpcRemoting impl
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Shuting server down. ");
             }
+
             if (initialized.get()) {
                 RegistryFactory.getInstance().unregister(new InetSocketAddress(XID.getIpAddress(), XID.getPort()));
                 RegistryFactory.getInstance().close();
-                //wait a few seconds for server transport
+                // wait a few seconds for server transport 1s
                 TimeUnit.SECONDS.sleep(nettyServerConfig.getServerShutdownWaitTime());
             }
 
@@ -184,6 +188,7 @@ public abstract class AbstractRpcRemotingServer extends AbstractRpcRemoting impl
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("will destroy channel:" + channel + ",address:" + serverAddress);
         }
+
         channel.disconnect();
         channel.close();
     }

@@ -174,7 +174,7 @@ public class StringUtils {
             return String.valueOf(obj);
         }
         if (obj instanceof String) {
-            return (String)obj;
+            return (String) obj;
         }
         if (obj instanceof Number || obj instanceof Character || obj instanceof Boolean) {
             return String.valueOf(obj);
@@ -185,8 +185,8 @@ public class StringUtils {
         if (obj instanceof Collection) {
             StringBuilder sb = new StringBuilder();
             sb.append("[");
-            if (!((Collection)obj).isEmpty()) {
-                for (Object o : (Collection)obj) {
+            if (!((Collection) obj).isEmpty()) {
+                for (Object o : (Collection) obj) {
                     sb.append(toString(o)).append(",");
                 }
                 sb.deleteCharAt(sb.length() - 1);
@@ -197,9 +197,9 @@ public class StringUtils {
         if (obj instanceof Map) {
             StringBuilder sb = new StringBuilder();
             sb.append("{");
-            if (!((Map)obj).isEmpty()) {
-                for (Object k : ((Map)obj).keySet()) {
-                    Object v = ((Map)obj).get(k);
+            if (!((Map) obj).isEmpty()) {
+                for (Object k : ((Map) obj).keySet()) {
+                    Object v = ((Map) obj).get(k);
                     sb.append(toString(k)).append("->").append(toString(v)).append(",");
                 }
                 sb.deleteCharAt(sb.length() - 1);

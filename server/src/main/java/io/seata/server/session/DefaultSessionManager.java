@@ -61,7 +61,7 @@ public class DefaultSessionManager extends AbstractSessionManager {
     }
 
     @Override
-    public GlobalSession findGlobalSession(String xid)  {
+    public GlobalSession findGlobalSession(String xid) {
         return sessionMap.get(xid);
     }
 
@@ -84,6 +84,7 @@ public class DefaultSessionManager extends AbstractSessionManager {
                 found.add(globalSession);
             }
         }
+
         return found;
     }
 
@@ -91,4 +92,5 @@ public class DefaultSessionManager extends AbstractSessionManager {
     public void destroy() {
         transactionStoreManager.shutdown();
     }
+
 }

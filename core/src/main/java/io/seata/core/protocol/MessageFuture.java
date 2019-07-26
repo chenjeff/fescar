@@ -29,10 +29,13 @@ import java.util.concurrent.TimeoutException;
  * @date 2018 /10/9
  */
 public class MessageFuture {
+
     private RpcMessage requestMessage;
     private long timeout;
+
     private long start = System.currentTimeMillis();
     private static final Object NULL = new Object();
+
     private transient CompletableFuture origin = new CompletableFuture();
 
     /**
@@ -50,11 +53,11 @@ public class MessageFuture {
      * @param timeout the timeout
      * @param unit    the unit
      * @return the object
-     * @throws TimeoutException the timeout exception
+     * @throws TimeoutException     the timeout exception
      * @throws InterruptedException the interrupted exception
      */
-    public Object get(long timeout, TimeUnit unit) throws TimeoutException,
-        InterruptedException {
+    public Object get(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
+
         Object result = null;
         try {
             result = origin.get(timeout, unit);
@@ -65,9 +68,9 @@ public class MessageFuture {
         }
 
         if (result instanceof RuntimeException) {
-            throw (RuntimeException)result;
+            throw (RuntimeException) result;
         } else if (result instanceof Throwable) {
-            throw new RuntimeException((Throwable)result);
+            throw new RuntimeException((Throwable) result);
         }
 
         return result;
@@ -117,4 +120,5 @@ public class MessageFuture {
     public void setTimeout(long timeout) {
         this.timeout = timeout;
     }
+
 }

@@ -24,34 +24,42 @@ import io.seata.common.exception.NotSupportYetException;
  * @date 2019 /02/26
  */
 public enum RegistryType {
+
     /**
      * File registry type.
      */
     File,
+
     /**
      * ZK registry type.
      */
     ZK,
+
     /**
      * Redis registry type.
      */
     Redis,
+
     /**
      * Nacos registry type.
      */
     Nacos,
+
     /**
      * Eureka registry type.
      */
     Eureka,
+
     /**
      * Consul registry type
      */
     Consul,
+
     /**
      * Etcd3 registry type
      */
     Etcd3,
+
     /**
      * Sofa registry type
      */
@@ -84,4 +92,5 @@ public enum RegistryType {
             throw new NotSupportYetException("unsupported type:" + name);
         }
     }
+
 }

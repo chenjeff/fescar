@@ -19,6 +19,8 @@ import io.seata.core.rpc.netty.RmMessageListener;
 import io.seata.core.rpc.netty.RmRpcClient;
 
 /**
+ * [TC] Transaction Coordinator
+ * <p>
  * The Rm client Initiator.
  *
  * @author jimin.jm @alibaba-inc.com

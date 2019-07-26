@@ -45,9 +45,11 @@ import org.slf4j.LoggerFactory;
  * @date 2018 /10/10
  */
 public class EnhancedServiceLoader {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(EnhancedServiceLoader.class);
     private static final String SERVICES_DIRECTORY = "META-INF/services/";
     private static final String SEATA_DIRECTORY = "META-INF/seata/";
+
     @SuppressWarnings("rawtypes")
     private static Map<Class, List<Class>> providers = new ConcurrentHashMap<Class, List<Class>>();
 
@@ -99,8 +101,7 @@ public class EnhancedServiceLoader {
      * @return s s
      * @throws EnhancedServiceNotFoundException the enhanced service not found exception
      */
-    public static <S> S load(Class<S> service, String activateName, ClassLoader loader)
-        throws EnhancedServiceNotFoundException {
+    public static <S> S load(Class<S> service, String activateName, ClassLoader loader) throws EnhancedServiceNotFoundException {
         return loadFile(service, activateName, loader);
     }
 
@@ -114,8 +115,7 @@ public class EnhancedServiceLoader {
      * @return the s
      * @throws EnhancedServiceNotFoundException the enhanced service not found exception
      */
-    public static <S> S load(Class<S> service, String activateName, Object[] args)
-        throws EnhancedServiceNotFoundException {
+    public static <S> S load(Class<S> service, String activateName, Object[] args) throws EnhancedServiceNotFoundException {
         Class[] argsType = null;
         if (args != null && args.length > 0) {
             argsType = new Class[args.length];
@@ -123,6 +123,7 @@ public class EnhancedServiceLoader {
                 argsType[i] = args[i].getClass();
             }
         }
+
         return loadFile(service, activateName, findClassLoader(), argsType, args);
     }
 
@@ -137,8 +138,7 @@ public class EnhancedServiceLoader {
      * @return the s
      * @throws EnhancedServiceNotFoundException the enhanced service not found exception
      */
-    public static <S> S load(Class<S> service, String activateName, Class[] argsType, Object[] args)
-        throws EnhancedServiceNotFoundException {
+    public static <S> S load(Class<S> service, String activateName, Class[] argsType, Object[] args) throws EnhancedServiceNotFoundException {
         return loadFile(service, activateName, findClassLoader(), argsType, args);
     }
 
@@ -152,9 +152,11 @@ public class EnhancedServiceLoader {
     public static <S> List<S> loadAll(Class<S> service) {
         List<S> allInstances = new ArrayList<>();
         List<Class> allClazzs = getAllExtensionClass(service);
+
         if (CollectionUtils.isEmpty(allClazzs)) {
             return allInstances;
         }
+
         try {
             for (Class clazz : allClazzs) {
                 allInstances.add(initInstance(service, clazz, null, null));
@@ -162,6 +164,7 @@ public class EnhancedServiceLoader {
         } catch (Throwable t) {
             throw new EnhancedServiceNotFoundException(t);
         }
+
         return allInstances;
     }
 
@@ -195,8 +198,7 @@ public class EnhancedServiceLoader {
     }
 
     @SuppressWarnings("rawtypes")
-    private static <S> S loadFile(Class<S> service, String activateName, ClassLoader loader, Class[] argTypes,
-                                  Object[] args) {
+    private static <S> S loadFile(Class<S> service, String activateName, ClassLoader loader, Class[] argTypes, Object[] args) {
         try {
             boolean foundFromCache = true;
             List<Class> extensions = providers.get(service);
@@ -217,7 +219,7 @@ public class EnhancedServiceLoader {
                 for (int i = 0; i < extensions.size(); i++) {
                     Class clz = extensions.get(i);
                     @SuppressWarnings("unchecked")
-                    LoadLevel activate = (LoadLevel)clz.getAnnotation(LoadLevel.class);
+                    LoadLevel activate = (LoadLevel) clz.getAnnotation(LoadLevel.class);
                     if (activate != null && activateName.equalsIgnoreCase(activate.name())) {
                         activateExtensions.add(clz);
                     }
@@ -228,23 +230,25 @@ public class EnhancedServiceLoader {
 
             if (extensions.isEmpty()) {
                 throw new EnhancedServiceNotFoundException(
-                    "not found service provider for : " + service.getName() + "[" + activateName
-                        + "] and classloader : " + ObjectUtils.toString(loader));
+                        "not found service provider for : " + service.getName() + "[" + activateName
+                                + "] and classloader : " + ObjectUtils.toString(loader));
             }
+
             Class<?> extension = extensions.get(extensions.size() - 1);
             S result = initInstance(service, extension, argTypes, args);
             if (!foundFromCache && LOGGER.isInfoEnabled()) {
                 LOGGER.info("load " + service.getSimpleName() + "[" + activateName + "] extension by class[" + extension
-                    .getName() + "]");
+                        .getName() + "]");
             }
+
             return result;
         } catch (Throwable e) {
             if (e instanceof EnhancedServiceNotFoundException) {
-                throw (EnhancedServiceNotFoundException)e;
+                throw (EnhancedServiceNotFoundException) e;
             } else {
                 throw new EnhancedServiceNotFoundException(
-                    "not found service provider for : " + service.getName() + " caused by " + ExceptionUtils
-                        .getFullStackTrace(e));
+                        "not found service provider for : " + service.getName() + " caused by " + ExceptionUtils
+                                .getFullStackTrace(e));
             }
         }
     }
@@ -262,15 +266,16 @@ public class EnhancedServiceLoader {
         if (extensions.isEmpty()) {
             return extensions;
         }
+
         Collections.sort(extensions, new Comparator<Class>() {
             @Override
             public int compare(Class c1, Class c2) {
                 Integer o1 = 0;
                 Integer o2 = 0;
                 @SuppressWarnings("unchecked")
-                LoadLevel a1 = (LoadLevel)c1.getAnnotation(LoadLevel.class);
+                LoadLevel a1 = (LoadLevel) c1.getAnnotation(LoadLevel.class);
                 @SuppressWarnings("unchecked")
-                LoadLevel a2 = (LoadLevel)c2.getAnnotation(LoadLevel.class);
+                LoadLevel a2 = (LoadLevel) c2.getAnnotation(LoadLevel.class);
 
                 if (a1 != null) {
                     o1 = a1.order();
@@ -289,8 +294,8 @@ public class EnhancedServiceLoader {
     }
 
     @SuppressWarnings("rawtypes")
-    private static void loadFile(Class<?> service, String dir, ClassLoader classLoader, List<Class> extensions)
-        throws IOException {
+    private static void loadFile(Class<?> service, String dir, ClassLoader classLoader, List<Class> extensions) throws IOException {
+
         String fileName = dir + service.getName();
         Enumeration<URL> urls;
         if (classLoader != null) {
@@ -340,13 +345,14 @@ public class EnhancedServiceLoader {
      * @param argTypes  the arg types
      * @param args      the args
      * @return s s
-     * @throws IllegalAccessException the illegal access exception
-     * @throws InstantiationException the instantiation exception
-     * @throws NoSuchMethodException the no such method exception
+     * @throws IllegalAccessException    the illegal access exception
+     * @throws InstantiationException    the instantiation exception
+     * @throws NoSuchMethodException     the no such method exception
      * @throws InvocationTargetException the invocation target exception
      */
     protected static <S> S initInstance(Class<S> service, Class implClazz, Class[] argTypes, Object[] args)
-        throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+            throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+
         S s = null;
         if (argTypes != null && args != null) {
             // Constructor with arguments
@@ -357,9 +363,11 @@ public class EnhancedServiceLoader {
             // default Constructor
             s = service.cast(implClazz.newInstance());
         }
+
         if (s instanceof Initialize) {
-            ((Initialize)s).init();
+            ((Initialize) s).init();
         }
+
         return s;
     }
 

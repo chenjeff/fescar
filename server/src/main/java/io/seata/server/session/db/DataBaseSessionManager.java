@@ -46,8 +46,7 @@ import org.slf4j.LoggerFactory;
  * @data 2019 /4/4
  */
 @LoadLevel(name = "db")
-public class DataBaseSessionManager extends AbstractSessionManager
-    implements SessionManager, SessionLifecycleListener, Initialize {
+public class DataBaseSessionManager extends AbstractSessionManager implements SessionManager, SessionLifecycleListener, Initialize {
 
     /**
      * The constant LOGGER.
@@ -101,6 +100,7 @@ public class DataBaseSessionManager extends AbstractSessionManager
         if (StringUtils.isNotBlank(taskName)) {
             return;
         }
+
         session.setStatus(status);
         boolean ret = transactionStoreManager.writeSession(LogOperation.GLOBAL_UPDATE, session);
         if (!ret) {
@@ -113,6 +113,7 @@ public class DataBaseSessionManager extends AbstractSessionManager
         if (StringUtils.isNotBlank(taskName)) {
             return;
         }
+
         boolean ret = transactionStoreManager.writeSession(LogOperation.GLOBAL_REMOVE, session);
         if (!ret) {
             throw new StoreException("removeGlobalSession failed.");
@@ -124,6 +125,7 @@ public class DataBaseSessionManager extends AbstractSessionManager
         if (StringUtils.isNotBlank(taskName)) {
             return;
         }
+
         boolean ret = transactionStoreManager.writeSession(LogOperation.BRANCH_ADD, session);
         if (!ret) {
             throw new StoreException("addBranchSession failed.");
@@ -135,6 +137,7 @@ public class DataBaseSessionManager extends AbstractSessionManager
         if (StringUtils.isNotBlank(taskName)) {
             return;
         }
+
         boolean ret = transactionStoreManager.writeSession(LogOperation.BRANCH_UPDATE, session);
         if (!ret) {
             throw new StoreException("updateBranchSessionStatus failed.");
@@ -146,6 +149,7 @@ public class DataBaseSessionManager extends AbstractSessionManager
         if (StringUtils.isNotBlank(taskName)) {
             return;
         }
+
         boolean ret = transactionStoreManager.writeSession(LogOperation.BRANCH_REMOVE, session);
         if (!ret) {
             throw new StoreException("removeBranchSession failed.");
@@ -159,27 +163,44 @@ public class DataBaseSessionManager extends AbstractSessionManager
 
     @Override
     public Collection<GlobalSession> allSessions() {
-        //get by taskName
+        // get by taskName
+        // ASYNC_COMMITTING_SESSION_MANAGER_NAME
         if (SessionHolder.ASYNC_COMMITTING_SESSION_MANAGER_NAME.equalsIgnoreCase(taskName)) {
             return findGlobalSessions(new SessionCondition(GlobalStatus.AsyncCommitting));
-        } else if (SessionHolder.RETRY_COMMITTING_SESSION_MANAGER_NAME.equalsIgnoreCase(taskName)) {
-            return findGlobalSessions(new SessionCondition(new GlobalStatus[] {GlobalStatus.CommitRetrying}));
-        } else if (SessionHolder.RETRY_ROLLBACKING_SESSION_MANAGER_NAME.equalsIgnoreCase(taskName)) {
-            return findGlobalSessions(new SessionCondition(new GlobalStatus[] {GlobalStatus.RollbackRetrying,
-                GlobalStatus.TimeoutRollbacking, GlobalStatus.TimeoutRollbackRetrying}));
-        } else {
-            //all data
-            return findGlobalSessions(new SessionCondition(new GlobalStatus[] {
-                GlobalStatus.UnKnown, GlobalStatus.Begin,
-                GlobalStatus.Committing, GlobalStatus.CommitRetrying, GlobalStatus.Rollbacking,
-                GlobalStatus.RollbackRetrying,
-                GlobalStatus.TimeoutRollbacking, GlobalStatus.TimeoutRollbackRetrying, GlobalStatus.AsyncCommitting}));
+        }
+        // RETRY_COMMITTING_SESSION_MANAGER_NAME
+        else if (SessionHolder.RETRY_COMMITTING_SESSION_MANAGER_NAME.equalsIgnoreCase(taskName)) {
+            return findGlobalSessions(new SessionCondition(
+                    new GlobalStatus[]{
+                            GlobalStatus.CommitRetrying
+                    }));
+        }
+        // RETRY_ROLLBACKING_SESSION_MANAGER_NAME
+        else if (SessionHolder.RETRY_ROLLBACKING_SESSION_MANAGER_NAME.equalsIgnoreCase(taskName)) {
+            return findGlobalSessions(new SessionCondition(
+                    new GlobalStatus[]{
+                            GlobalStatus.RollbackRetrying,
+                            GlobalStatus.TimeoutRollbacking,
+                            GlobalStatus.TimeoutRollbackRetrying
+                    }));
+        }
+        // ROOT_SESSION_MANAGER
+        else {
+            // all status data
+            return findGlobalSessions(new SessionCondition(
+                    new GlobalStatus[]{
+                            GlobalStatus.UnKnown, GlobalStatus.Begin,
+                            GlobalStatus.Committing, GlobalStatus.CommitRetrying,
+                            GlobalStatus.Rollbacking, GlobalStatus.RollbackRetrying,
+                            GlobalStatus.TimeoutRollbacking, GlobalStatus.TimeoutRollbackRetrying,
+                            GlobalStatus.AsyncCommitting
+                    }));
         }
     }
 
     @Override
     public List<GlobalSession> findGlobalSessions(SessionCondition condition) {
-        //nothing need to do
+        // nothing need to do
         return transactionStoreManager.readSession(condition);
     }
 

@@ -67,24 +67,27 @@ public class TccActionInterceptor implements MethodInterceptor {
     public Object invoke(final MethodInvocation invocation) throws Throwable {
         Method method = getActionInterfaceMethod(invocation);
         TwoPhaseBusinessAction businessAction = method.getAnnotation(TwoPhaseBusinessAction.class);
-        //try method
+        // try method
         if (businessAction != null) {
             if (StringUtils.isBlank(RootContext.getXID())) {
                 //not in distribute transaction
                 return invocation.proceed();
             }
+
             Object[] methodArgs = invocation.getArguments();
-            //Handler the TCC Aspect
+            // Handler the TCC Aspect
             Map<String, Object> ret = actionInterceptorHandler.proceed(method, methodArgs, businessAction,
-                new Callback<Object>() {
-                    @Override
-                    public Object execute() throws Throwable {
-                        return invocation.proceed();
-                    }
-                });
-            //return the final result
+                    new Callback<Object>() {
+                        @Override
+                        public Object execute() throws Throwable {
+                            return invocation.proceed();
+                        }
+                    });
+
+            // return the final result
             return ret.get(Constants.TCC_METHOD_RESULT);
         }
+
         return invocation.proceed();
     }
 
@@ -96,21 +99,24 @@ public class TccActionInterceptor implements MethodInterceptor {
      */
     protected Method getActionInterfaceMethod(MethodInvocation invocation) {
         try {
-            Class<?> interfaceType = null;
+            Class<?> interfaceType;
             if (remotingDesc == null) {
                 interfaceType = getProxyInterface(invocation.getThis());
             } else {
                 interfaceType = remotingDesc.getInterfaceClass();
             }
+
             if (interfaceType == null && remotingDesc.getInterfaceClassName() != null) {
                 interfaceType = Class.forName(remotingDesc.getInterfaceClassName(), true,
-                    Thread.currentThread().getContextClassLoader());
+                        Thread.currentThread().getContextClassLoader());
             }
+
             if (interfaceType == null) {
                 return invocation.getMethod();
             }
-            Method method = interfaceType.getMethod(invocation.getMethod().getName(),
-                invocation.getMethod().getParameterTypes());
+
+            Method method = interfaceType.getMethod(invocation.getMethod().getName(), invocation.getMethod().getParameterTypes());
+
             return method;
         } catch (Exception e) {
             LOGGER.warn("get Method from interface failed", e);
@@ -127,11 +133,14 @@ public class TccActionInterceptor implements MethodInterceptor {
      */
     protected Class<?> getProxyInterface(Object proxyBean) throws Exception {
         if (proxyBean.getClass().getName().startsWith("com.alibaba.dubbo.common.bytecode.proxy")) {
-            //dubbo javaassist proxy
+            // proxyBean.getClass().getName().startsWith("org.apache.dubbo.common.bytecode.proxy")
+
+            // dubbo javaassist proxy
             return DubboUtil.getAssistInterface(proxyBean);
         } else {
-            //jdk/cglib proxy
+            // jdk/cglib proxy
             return SpringProxyUtils.getTargetInterface(proxyBean);
         }
     }
+
 }

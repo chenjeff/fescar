@@ -40,6 +40,7 @@ public class UndoExecutorFactory {
         if (!dbType.equals(JdbcConstants.MYSQL)) {
             throw new NotSupportYetException(dbType);
         }
+
         switch (sqlUndoLog.getSqlType()) {
             case INSERT:
                 return new MySQLUndoInsertExecutor(sqlUndoLog);

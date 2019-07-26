@@ -100,7 +100,7 @@ public class LockStoreDataBaseDAO implements LockStore, Initialize {
             conn = logStoreDataSource.getConnection();
             conn.setAutoCommit(false);
 
-            //check lock
+            // check lock
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < lockDOs.size(); i++) {
                 sb.append("?");
@@ -108,13 +108,15 @@ public class LockStoreDataBaseDAO implements LockStore, Initialize {
                     sb.append(", ");
                 }
             }
+
             boolean canLock = true, isReLock = false;
-            //query
+            // query
             String checkLockSQL = LockStoreSqls.getCheckLockableSql(lockTable, sb.toString(), dbType);
             ps = conn.prepareStatement(checkLockSQL);
             for (int i = 0; i < lockDOs.size(); i++) {
                 ps.setString(i + 1, lockDOs.get(i).getRowKey());
             }
+
             rs = ps.executeQuery();
             while (rs.next()) {
                 if (StringUtils.equals(rs.getString("xid"), lockDOs.get(0).getXid())) {
@@ -134,13 +136,14 @@ public class LockStoreDataBaseDAO implements LockStore, Initialize {
                 return true;
             }
 
-            //lock
+            // lock
             for (LockDO lockDO : lockDOs) {
                 if (!doAcquireLock(conn, lockDO)) {
                     conn.rollback();
                     return false;
                 }
             }
+
             conn.commit();
             return true;
         } catch (SQLException e) {
@@ -189,13 +192,15 @@ public class LockStoreDataBaseDAO implements LockStore, Initialize {
                     sb.append(", ");
                 }
             }
-            //batch release lock
+
+            // batch release lock
             String batchDeleteSQL = LockStoreSqls.getBatchDeleteLockSql(lockTable, sb.toString(), dbType);
             ps = conn.prepareStatement(batchDeleteSQL);
             ps.setString(1, lockDOs.get(0).getXid());
             for (int i = 0; i < lockDOs.size(); i++) {
                 ps.setString(i + 2, lockDOs.get(i).getRowKey());
             }
+
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new StoreException(e);

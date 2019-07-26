@@ -83,4 +83,5 @@ public class BranchUndoLog {
     public void setSqlUndoLogs(List<SQLUndoLog> sqlUndoLogs) {
         this.sqlUndoLogs = sqlUndoLogs;
     }
+
 }

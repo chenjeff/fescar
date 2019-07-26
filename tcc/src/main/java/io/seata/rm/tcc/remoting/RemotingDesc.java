@@ -182,4 +182,5 @@ public class RemotingDesc {
     public void setReference(boolean reference) {
         isReference = reference;
     }
+    
 }

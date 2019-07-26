@@ -36,8 +36,7 @@ public class SofaRpcRemotingParser extends AbstractedRemotingParser {
      * @throws FrameworkException
      */
     @Override
-    public boolean isReference(Object bean, String beanName)
-        throws FrameworkException {
+    public boolean isReference(Object bean, String beanName) throws FrameworkException {
         String beanClassName = bean.getClass().getName();
         return "com.alipay.sofa.runtime.spring.factory.ReferenceFactoryBean".equals(beanClassName);
     }
@@ -61,11 +60,12 @@ public class SofaRpcRemotingParser extends AbstractedRemotingParser {
         if (!this.isRemoting(bean, beanName)) {
             return null;
         }
+
         try {
             RemotingDesc serviceBeanDesc = new RemotingDesc();
-            Class<?> interfaceClass = (Class<?>)ReflectionUtil.invokeMethod(bean, "getInterfaceClass");
-            String interfaceClassName = (String)ReflectionUtil.getFieldValue(bean, "interfaceType");
-            String uniqueId = (String)ReflectionUtil.getFieldValue(bean, "uniqueId");
+            Class<?> interfaceClass = (Class<?>) ReflectionUtil.invokeMethod(bean, "getInterfaceClass");
+            String interfaceClassName = (String) ReflectionUtil.getFieldValue(bean, "interfaceType");
+            String uniqueId = (String) ReflectionUtil.getFieldValue(bean, "uniqueId");
             serviceBeanDesc.setInterfaceClass(interfaceClass);
             serviceBeanDesc.setInterfaceClassName(interfaceClassName);
             serviceBeanDesc.setUniqueId(uniqueId);

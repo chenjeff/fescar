@@ -22,6 +22,7 @@ package io.seata.core.rpc;
  * @date 2018 /9/5
  */
 public interface RemotingService {
+
     /**
      * Start.
      */

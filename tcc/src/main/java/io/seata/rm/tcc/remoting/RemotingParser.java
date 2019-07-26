@@ -71,5 +71,4 @@ public interface RemotingParser {
      */
     short getProtocol();
 
-
 }

@@ -49,6 +49,7 @@ public abstract class AbstractLockManager implements LockManager {
         if (branchSession == null || StringUtils.isBlank(branchSession.getLockKey())) {
             return locks;
         }
+
         String xid = branchSession.getXid();
         String resourceId = branchSession.getResourceId();
         long transactionId = branchSession.getTransactionId();
@@ -80,8 +81,8 @@ public abstract class AbstractLockManager implements LockManager {
      * @param branchID      the branch id
      * @return the list
      */
-    protected List<RowLock> collectRowLocks(String lockKey, String resourceId, String xid, Long transactionId,
-                                            Long branchID) {
+    protected List<RowLock> collectRowLocks(String lockKey, String resourceId, String xid, Long transactionId, Long branchID) {
+
         List<RowLock> locks = new ArrayList<RowLock>();
 
         String[] tableGroupedLockKeys = lockKey.split(";");
@@ -90,15 +91,18 @@ public abstract class AbstractLockManager implements LockManager {
             if (idx < 0) {
                 return locks;
             }
+
             String tableName = tableGroupedLockKey.substring(0, idx);
             String mergedPKs = tableGroupedLockKey.substring(idx + 1);
             if (StringUtils.isBlank(mergedPKs)) {
                 return locks;
             }
+
             String[] pks = mergedPKs.split(",");
             if (pks == null || pks.length == 0) {
                 return locks;
             }
+
             for (String pk : pks) {
                 if (StringUtils.isNotBlank(pk)) {
                     RowLock rowLock = new RowLock();
@@ -112,6 +116,7 @@ public abstract class AbstractLockManager implements LockManager {
                 }
             }
         }
+
         return locks;
     }
 

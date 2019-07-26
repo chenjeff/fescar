@@ -43,7 +43,7 @@ public class BranchSession implements Lockable, Comparable<BranchSession>, Sessi
     private static final int MAX_BRANCH_SESSION_SIZE = StoreConfig.getMaxBranchSessionSize();
 
     private static ThreadLocal<ByteBuffer> byteBufferThreadLocal = ThreadLocal.withInitial(() -> ByteBuffer.allocate(
-        MAX_BRANCH_SESSION_SIZE));
+            MAX_BRANCH_SESSION_SIZE));
 
     private String xid;
 
@@ -66,7 +66,7 @@ public class BranchSession implements Lockable, Comparable<BranchSession>, Sessi
     private String applicationData;
 
     private ConcurrentHashMap<Map<String, Long>, Set<String>> lockHolder
-        = new ConcurrentHashMap<>();
+            = new ConcurrentHashMap<>();
 
     /**
      * Gets application data.
@@ -295,7 +295,7 @@ public class BranchSession implements Lockable, Comparable<BranchSession>, Sessi
         if (size > MAX_BRANCH_SESSION_SIZE) {
             if (lockKeyBytes == null) {
                 throw new RuntimeException("branch session size exceeded, size : " + size + " maxBranchSessionSize : "
-                    + MAX_BRANCH_SESSION_SIZE);
+                        + MAX_BRANCH_SESSION_SIZE);
             }
             // try compress lockkey
             try {
@@ -309,8 +309,8 @@ public class BranchSession implements Lockable, Comparable<BranchSession>, Sessi
 
             if (size > MAX_BRANCH_SESSION_SIZE) {
                 throw new RuntimeException(
-                    "compress branch session size exceeded, compressSize : " + size + " maxBranchSessionSize : "
-                        + MAX_BRANCH_SESSION_SIZE);
+                        "compress branch session size exceeded, compressSize : " + size + " maxBranchSessionSize : "
+                                + MAX_BRANCH_SESSION_SIZE);
             }
         }
 
@@ -336,10 +336,10 @@ public class BranchSession implements Lockable, Comparable<BranchSession>, Sessi
         }
 
         if (null != clientIdBytes) {
-            byteBuffer.putShort((short)clientIdBytes.length);
+            byteBuffer.putShort((short) clientIdBytes.length);
             byteBuffer.put(clientIdBytes);
         } else {
-            byteBuffer.putShort((short)0);
+            byteBuffer.putShort((short) 0);
         }
 
         if (null != applicationDataBytes) {
@@ -356,7 +356,7 @@ public class BranchSession implements Lockable, Comparable<BranchSession>, Sessi
             byteBuffer.putInt(0);
         }
 
-        byteBuffer.put((byte)status.getCode());
+        byteBuffer.put((byte) status.getCode());
         byteBuffer.flip();
         byte[] result = new byte[byteBuffer.limit()];
         byteBuffer.get(result);
@@ -366,17 +366,17 @@ public class BranchSession implements Lockable, Comparable<BranchSession>, Sessi
     private int calBranchSessionSize(byte[] resourceIdBytes, byte[] lockKeyBytes, byte[] clientIdBytes,
                                      byte[] applicationDataBytes, byte[] xidBytes) {
         final int size = 8 // trascationId
-            + 8 // branchId
-            + 4 // resourceIdBytes.length
-            + 4 // lockKeyBytes.length
-            + 2 // clientIdBytes.length
-            + 4 // applicationDataBytes.length
-            + 1 // statusCode
-            + (resourceIdBytes == null ? 0 : resourceIdBytes.length)
-            + (lockKeyBytes == null ? 0 : lockKeyBytes.length)
-            + (clientIdBytes == null ? 0 : clientIdBytes.length)
-            + (applicationDataBytes == null ? 0 : applicationDataBytes.length)
-            + (xidBytes == null ? 0 : xidBytes.length);
+                + 8 // branchId
+                + 4 // resourceIdBytes.length
+                + 4 // lockKeyBytes.length
+                + 2 // clientIdBytes.length
+                + 4 // applicationDataBytes.length
+                + 1 // statusCode
+                + (resourceIdBytes == null ? 0 : resourceIdBytes.length)
+                + (lockKeyBytes == null ? 0 : lockKeyBytes.length)
+                + (clientIdBytes == null ? 0 : clientIdBytes.length)
+                + (applicationDataBytes == null ? 0 : applicationDataBytes.length)
+                + (xidBytes == null ? 0 : xidBytes.length);
         return size;
     }
 

@@ -19,7 +19,7 @@ package io.seata.core.store;
 import java.util.List;
 
 /**
- * the transaction log store
+ * the transaction log store.
  *
  * @author zhangsen
  * @data 2019 /3/26

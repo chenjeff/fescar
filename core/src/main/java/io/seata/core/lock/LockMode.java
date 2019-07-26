@@ -33,5 +33,4 @@ public enum LockMode {
      */
     DB;
 
-
 }

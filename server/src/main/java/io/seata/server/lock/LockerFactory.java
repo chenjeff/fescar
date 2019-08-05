@@ -80,6 +80,7 @@ public class LockerFactory {
     public static synchronized final Locker get(BranchSession branchSession) {
         /**
          * lock.mode
+         * store.mode
          */
         String storeMode = CONFIG.getConfig(ConfigurationKeys.STORE_MODE);
         if (StoreMode.DB.name().equalsIgnoreCase(storeMode)) {
@@ -87,7 +88,7 @@ public class LockerFactory {
                 return lockerMap.get(storeMode);
             }
 
-            // init dataSource
+            // init dataSource  store.db.datasource
             String datasourceType = CONFIG.getConfig(ConfigurationKeys.STORE_DB_DATASOURCE_TYPE);
             DataSourceGenerator dataSourceGenerator = EnhancedServiceLoader.load(DataSourceGenerator.class, datasourceType);
             DataSource logStoreDataSource = dataSourceGenerator.generateDataSource();

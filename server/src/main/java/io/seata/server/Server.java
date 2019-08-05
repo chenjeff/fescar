@@ -41,7 +41,6 @@ public class Server {
     private static final int MAX_TASK_QUEUE_SIZE = 20000;
     private static final int KEEP_ALIVE_TIME = 500;
 
-
     private static final ThreadPoolExecutor WORKING_THREADS = new ThreadPoolExecutor(
             MIN_SERVER_POOL_SIZE,
             MAX_SERVER_POOL_SIZE,
@@ -58,20 +57,24 @@ public class Server {
      * @throws IOException the io exception
      */
     public static void main(String[] args) throws IOException {
-        //initialize the metrics
+        // initialize the metrics
         MetricsManager.get().init();
 
-        //initialize the parameter parser
+        // initialize the parameter parser
         ParameterParser parameterParser = new ParameterParser(args);
 
         RpcServer rpcServer = new RpcServer(WORKING_THREADS);
-        //server host
+
+        // server host
         rpcServer.setHost(parameterParser.getHost());
-        //server port
+        // server port
         rpcServer.setListenPort(parameterParser.getPort());
+
+        // server-node-id 为什么写死了?
+        // server-node-id 限定了 uuid 的取值范围, 分布式多节点会产生重复的 uuid ?
         UUIDGenerator.init(1);
 
-//log store mode : file、db
+        // log store mode : file、db
         SessionHolder.init(parameterParser.getStoreMode());
 
         // 默认协调员 分布式事务协调实现类
@@ -81,7 +84,7 @@ public class Server {
         // register ShutdownHook
         ShutdownHook.getInstance().addDisposable(coordinator);
 
-        //127.0.0.1 and 0.0.0.0 are not valid here.
+        // 127.0.0.1 and 0.0.0.0 are not valid here.
         if (NetUtil.isValidIp(parameterParser.getHost(), false)) {
             XID.setIpAddress(parameterParser.getHost());
         } else {

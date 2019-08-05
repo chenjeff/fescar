@@ -71,6 +71,8 @@ public class ProtocolConstants {
     // public static final byte MSGTYPE_NEGOTIATOR_RESPONSE = 6;
 
     /**
+     * [default: transport.serialization: seata]
+     *
      * Configured codec by user, default is SEATA
      * 
      * @see CodecType#SEATA

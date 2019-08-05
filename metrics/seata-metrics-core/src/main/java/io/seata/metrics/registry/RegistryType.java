@@ -35,4 +35,5 @@ public enum RegistryType {
             throw new NotSupportYetException("unsupported type:" + name);
         }
     }
+
 }

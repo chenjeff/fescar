@@ -26,21 +26,23 @@ import com.beust.jcommander.ParameterException;
  * @date 2019/05/30
  */
 public class ParameterParser {
+
     private static final String PROGRAM_NAME = "sh seata-server.sh(for linux and mac) or cmd seata-server.bat(for windows)";
     private static final int SERVER_DEFAULT_PORT = 8091;
     private static final String SERVER_DEFAULT_BIND_IP = "0.0.0.0";
     private static final String SERVER_DEFAULT_STORE_MODE = "file";
 
-
     @Parameter(names = "--help", help = true)
     private boolean help;
+
     @Parameter(names = {"--host", "-h"}, description = "The host to bind.", order = 1)
     private String host = SERVER_DEFAULT_BIND_IP;
+
     @Parameter(names = {"--port", "-p"}, description = "The port to listen.", order = 2)
     private int port = SERVER_DEFAULT_PORT;
+
     @Parameter(names = {"--storeMode", "-m"}, description = "log store mode : file、db", order = 3)
     private String storeMode = SERVER_DEFAULT_STORE_MODE;
-
 
     public ParameterParser(String[] args) {
         this.init(args);
@@ -53,6 +55,7 @@ public class ParameterParser {
      */
     private void init(String[] args) {
         try {
+            // 开发命令行交互 cli
             JCommander jCommander = JCommander.newBuilder().addObject(this).build();
             jCommander.parse(args);
             if (help) {
@@ -63,7 +66,6 @@ public class ParameterParser {
         } catch (ParameterException e) {
             printError(e);
         }
-
     }
 
     /**
@@ -113,4 +115,5 @@ public class ParameterParser {
     public boolean isHelp() {
         return help;
     }
+
 }

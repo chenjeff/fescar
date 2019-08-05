@@ -222,6 +222,5 @@ public class NetUtil {
         } else {
             return (ip != null && !ANY_HOST.equals(ip) && !LOCALHOST.equals(ip) && IP_PATTERN.matcher(ip).matches());
         }
-
     }
 }

@@ -29,18 +29,23 @@ import io.seata.core.constants.ConfigurationKeys;
  * @author zhengyangyong
  */
 public class RegistryFactory {
+
     public static Registry getInstance() {
         RegistryType registryType;
+        // metrics.registry-type
         String registryTypeName = ConfigurationFactory.getInstance().getConfig(
             ConfigurationKeys.METRICS_PREFIX + ConfigurationKeys.METRICS_REGISTRY_TYPE, null);
+
         if (!StringUtils.isNullOrEmpty(registryTypeName)) {
             try {
                 registryType = RegistryType.getType(registryTypeName);
             } catch (Exception exx) {
                 throw new NotSupportYetException("not support metrics registry type: " + registryTypeName);
             }
+
             return EnhancedServiceLoader.load(Registry.class, Objects.requireNonNull(registryType).name());
         }
         return null;
     }
+
 }

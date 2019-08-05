@@ -59,18 +59,18 @@ public class NettyServerConfig extends NettyBaseConfig {
      * The constant DIRECT_BYTE_BUF_ALLOCATOR.
      */
     public static final PooledByteBufAllocator DIRECT_BYTE_BUF_ALLOCATOR =
-            new PooledByteBufAllocator(
-                    true,
-                    WORKER_THREAD_SIZE,
-                    WORKER_THREAD_SIZE,
-                    2048 * 64,
-                    10,
-                    512,
-                    256,
-                    64,
-                    true,
-                    0
-            );
+        new PooledByteBufAllocator(
+            true,
+            WORKER_THREAD_SIZE,
+            WORKER_THREAD_SIZE,
+            2048 * 64,
+            10,
+            512,
+            256,
+            64,
+            true,
+            0
+        );
 
     /**
      * Gets server selector threads.
@@ -96,9 +96,7 @@ public class NettyServerConfig extends NettyBaseConfig {
      * @return the boolean
      */
     public static boolean enableEpoll() {
-        return NettyBaseConfig.SERVER_CHANNEL_CLAZZ.equals(EpollServerSocketChannel.class)
-                && Epoll.isAvailable();
-
+        return NettyBaseConfig.SERVER_CHANNEL_CLAZZ.equals(EpollServerSocketChannel.class) && Epoll.isAvailable();
     }
 
     /**

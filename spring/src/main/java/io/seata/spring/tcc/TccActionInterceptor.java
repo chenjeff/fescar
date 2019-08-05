@@ -75,9 +75,9 @@ public class TccActionInterceptor implements MethodInterceptor {
         TwoPhaseBusinessAction businessAction = method.getAnnotation(TwoPhaseBusinessAction.class);
         // try method
         if (businessAction != null) {
-            //save the xid
+            // save the xid
             String xid = RootContext.getXID();
-            //clear the context
+            // clear the context
             RootContext.unbind();
             try {
 
@@ -93,7 +93,7 @@ public class TccActionInterceptor implements MethodInterceptor {
 
             // return the final result
             return ret.get(Constants.TCC_METHOD_RESULT);} finally {
-                //recovery the context
+                // recovery the context
                 RootContext.bind(xid);
             }
         }

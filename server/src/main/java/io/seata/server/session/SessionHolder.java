@@ -84,7 +84,7 @@ public class SessionHolder {
      */
     public static void init(String mode) throws IOException {
         if (StringUtils.isBlank(mode)) {
-            // use default
+            // get from file.conf
             // store.mode   [default: file]
             mode = CONFIG.getConfig(ConfigurationKeys.STORE_MODE);
         }
@@ -97,8 +97,10 @@ public class SessionHolder {
             // async.commit.data
             ASYNC_COMMITTING_SESSION_MANAGER = EnhancedServiceLoader.load(SessionManager.class, StoreMode.DB.name(),
                 new Object[] {ASYNC_COMMITTING_SESSION_MANAGER_NAME});
+
             RETRY_COMMITTING_SESSION_MANAGER = EnhancedServiceLoader.load(SessionManager.class, StoreMode.DB.name(),
                 new Object[] {RETRY_COMMITTING_SESSION_MANAGER_NAME});
+
             RETRY_ROLLBACKING_SESSION_MANAGER = EnhancedServiceLoader.load(SessionManager.class, StoreMode.DB.name(),
                     new Object[]{RETRY_ROLLBACKING_SESSION_MANAGER_NAME});
         } else if (StoreMode.FILE.equals(storeMode)) {
@@ -124,7 +126,7 @@ public class SessionHolder {
             throw new IllegalArgumentException("unknown store mode:" + mode);
         }
 
-        //relaod
+        // relaod
         reload();
     }
 

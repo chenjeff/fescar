@@ -100,6 +100,7 @@ public abstract class AbstractRpcRemotingServer extends AbstractRpcRemoting impl
         if (!NetUtil.isValidIp(host, true)) {
             throw new IllegalArgumentException("host: " + host + " is invalid!");
         }
+
         this.host = host;
     }
 

@@ -343,7 +343,8 @@ public abstract class AbstractRpcRemoting extends ChannelDuplexHandler implement
         rpcMessage.setMessageType(msg instanceof HeartbeatMessage ?
                 ProtocolConstants.MSGTYPE_HEARTBEAT_RESPONSE :
                 ProtocolConstants.MSGTYPE_RESPONSE);
-        rpcMessage.setCodec(request.getCodec()); // same with request
+        // same with request
+        rpcMessage.setCodec(request.getCodec());
         rpcMessage.setCompressor(request.getCompressor());
         rpcMessage.setBody(msg);
         rpcMessage.setId(request.getId());

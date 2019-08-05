@@ -39,6 +39,7 @@ import io.seata.metrics.Timer;
  */
 @LoadLevel(name = "Compact", order = 1)
 public class CompactRegistry implements Registry {
+
     private static final Map<UUID, Meter> METERS = new ConcurrentHashMap<>();
 
     @Override
@@ -71,4 +72,5 @@ public class CompactRegistry implements Registry {
             meter -> meter.measure().forEach(measurements::add));
         return measurements;
     }
+
 }

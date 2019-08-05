@@ -50,6 +50,7 @@ public final class ConfigurationFactory {
             System.setProperty(ENV_PROPERTY_KEY, env);
         }
 
+        // seataConfigEnv
         ENV_VALUE = System.getProperty(ENV_PROPERTY_KEY);
     }
 
@@ -91,7 +92,8 @@ public final class ConfigurationFactory {
         String configTypeName = null;
         try {
             // config.type
-            configTypeName = CURRENT_FILE_INSTANCE.getConfig(ConfigurationKeys.FILE_ROOT_CONFIG
+            configTypeName = CURRENT_FILE_INSTANCE
+                    .getConfig(ConfigurationKeys.FILE_ROOT_CONFIG
                     + ConfigurationKeys.FILE_CONFIG_SPLIT_CHAR
                     + ConfigurationKeys.FILE_ROOT_TYPE);
 

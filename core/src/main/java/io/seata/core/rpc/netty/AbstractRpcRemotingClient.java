@@ -84,9 +84,9 @@ public abstract class AbstractRpcRemotingClient extends AbstractRpcRemoting
         super(messageExecutor);
         this.transactionRole = transactionRole;
         clientBootstrap = new RpcClientBootstrap(nettyClientConfig, eventExecutorGroup, this, transactionRole);
-        clientChannelManager = new NettyClientChannelManager(
-                new NettyPoolableFactory(this, clientBootstrap), getPoolKeyFunction(), nettyClientConfig);
-                        }
+        clientChannelManager = new NettyClientChannelManager(new NettyPoolableFactory(this, clientBootstrap),
+                getPoolKeyFunction(), nettyClientConfig);
+    }
 
     public NettyClientChannelManager getClientChannelManager() {
         return clientChannelManager;
@@ -109,18 +109,22 @@ public abstract class AbstractRpcRemotingClient extends AbstractRpcRemoting
     @Override
     public void init() {
         clientBootstrap.start();
+
         timerExecutor.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
                 clientChannelManager.reconnect(getTransactionServiceGroup());
             }
         }, SCHEDULE_INTERVAL_MILLS, SCHEDULE_INTERVAL_MILLS, TimeUnit.SECONDS);
+
         mergeSendExecutorService = new ThreadPoolExecutor(MAX_MERGE_SEND_THREAD,
-            MAX_MERGE_SEND_THREAD,
-            KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<>(),
-            new NamedThreadFactory(getThreadPrefix(), MAX_MERGE_SEND_THREAD));
+                MAX_MERGE_SEND_THREAD,
+                KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(),
+                new NamedThreadFactory(getThreadPrefix(), MAX_MERGE_SEND_THREAD));
+
         mergeSendExecutorService.submit(new MergedSendRunnable());
+
         super.init();
     }
 
@@ -184,7 +188,7 @@ public abstract class AbstractRpcRemotingClient extends AbstractRpcRemoting
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
         if (evt instanceof IdleStateEvent) {
-            IdleStateEvent idleStateEvent = (IdleStateEvent)evt;
+            IdleStateEvent idleStateEvent = (IdleStateEvent) evt;
             if (idleStateEvent.state() == IdleState.READER_IDLE) {
                 if (LOGGER.isInfoEnabled()) {
                     LOGGER.info("channel" + ctx.channel() + " read idle.");
@@ -214,7 +218,7 @@ public abstract class AbstractRpcRemotingClient extends AbstractRpcRemoting
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         LOGGER.error(FrameworkErrorCode.ExceptionCaught.getErrCode(),
-            NetUtil.toStringAddress(ctx.channel().remoteAddress()) + "connect exception. " + cause.getMessage(), cause);
+                NetUtil.toStringAddress(ctx.channel().remoteAddress()) + "connect exception. " + cause.getMessage(), cause);
         clientChannelManager.releaseChannel(ctx.channel(), getAddressFromChannel(ctx.channel()));
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("remove exception rm channel:" + ctx.channel());
@@ -228,7 +232,7 @@ public abstract class AbstractRpcRemotingClient extends AbstractRpcRemoting
         Channel channel = clientChannelManager.acquireChannel(validAddress);
         Object result = super.sendAsyncRequestWithResponse(validAddress, channel, msg, timeout);
         if (result instanceof GlobalBeginResponse
-            && ((GlobalBeginResponse) result).getResultCode() == ResultCode.Failed) {
+                && ((GlobalBeginResponse) result).getResultCode() == ResultCode.Failed) {
             LOGGER.error("begin response error,release channel:" + channel);
             clientChannelManager.releaseChannel(channel, validAddress);
         }
@@ -242,7 +246,7 @@ public abstract class AbstractRpcRemotingClient extends AbstractRpcRemoting
 
     @Override
     public Object sendMsgWithResponse(String serverAddress, Object msg, long timeout)
-        throws TimeoutException {
+            throws TimeoutException {
         return sendAsyncRequestWithResponse(serverAddress, clientChannelManager.acquireChannel(serverAddress), msg, timeout);
     }
 

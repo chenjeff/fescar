@@ -85,12 +85,14 @@ public class DefaultFailureHandlerImpl implements FailureHandler {
         @Override
         public void run(Timeout timeout) {
             if (!isStopped) {
+                // RETRY_MAX_TIMES = 360
                 if (++count > RETRY_MAX_TIMES) {
                     LOGGER.error("transaction[" + tx.getXid() + "] retry fetch status times exceed the limit [" + RETRY_MAX_TIMES + " times]");
                     return;
                 }
 
                 isStopped = shouldStop(tx, required);
+                // 10s
                 timer.newTimeout(this, SCHEDULE_INTERVAL_SECONDS, TimeUnit.SECONDS);
             }
         }

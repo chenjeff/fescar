@@ -99,6 +99,7 @@ public class TableRecords {
         if (this.tableMeta != null) {
             throw new ShouldNeverHappenException();
         }
+
         this.tableMeta = tableMeta;
         this.tableName = tableMeta.getTableName();
     }
@@ -138,6 +139,7 @@ public class TableRecords {
                 }
             }
         }
+
         return pkRows;
     }
 
@@ -175,16 +177,20 @@ public class TableRecords {
 
         while (resultSet.next()) {
             List<Field> fields = new ArrayList<>(columnCount);
+            // loop result column
             for (int i = 1; i <= columnCount; i++) {
                 String colName = resultSetMetaData.getColumnName(i);
                 ColumnMeta col = tmeta.getColumnMeta(colName);
+
                 Field field = new Field();
                 field.setName(col.getColumnName());
                 if (tmeta.getPkName().equalsIgnoreCase(field.getName())) {
+                    // PrimaryKey
                     field.setKeyType(KeyType.PrimaryKey);
                 }
                 field.setType(col.getDataType());
                 field.setValue(resultSet.getObject(i));
+
                 fields.add(field);
             }
 
@@ -193,12 +199,14 @@ public class TableRecords {
 
             records.add(row);
         }
+
         return records;
     }
 
     public static class EmptyTableRecords extends TableRecords {
 
-        public EmptyTableRecords() {}
+        public EmptyTableRecords() {
+        }
 
         public EmptyTableRecords(TableMeta tableMeta) {
             this.setTableMeta(tableMeta);

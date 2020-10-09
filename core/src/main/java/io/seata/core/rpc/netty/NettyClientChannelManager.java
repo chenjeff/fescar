@@ -40,26 +40,26 @@ import java.util.function.Function;
  * @author zhaojun
  */
 class NettyClientChannelManager {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyClientChannelManager.class);
-    
+
     private final ConcurrentMap<String, Object> channelLocks = new ConcurrentHashMap<>();
-    
+
     private final ConcurrentMap<String, NettyPoolKey> poolKeyMap = new ConcurrentHashMap<>();
-    
+
     private final ConcurrentMap<String, Channel> channels = new ConcurrentHashMap<>();
-    
+
     private final GenericKeyedObjectPool<NettyPoolKey, Channel> nettyClientKeyPool;
-    
+
     private Function<String, NettyPoolKey> poolKeyFunction;
-    
+
     NettyClientChannelManager(final NettyPoolableFactory keyPoolableFactory, final Function<String, NettyPoolKey> poolKeyFunction,
-                                     final NettyClientConfig clientConfig) {
+                              final NettyClientConfig clientConfig) {
         nettyClientKeyPool = new GenericKeyedObjectPool<>(keyPoolableFactory);
         nettyClientKeyPool.setConfig(getNettyPoolConfig(clientConfig));
         this.poolKeyFunction = poolKeyFunction;
     }
-    
+
     private GenericKeyedObjectPool.Config getNettyPoolConfig(final NettyClientConfig clientConfig) {
         GenericKeyedObjectPool.Config poolConfig = new GenericKeyedObjectPool.Config();
         poolConfig.maxActive = clientConfig.getMaxPoolActive();
@@ -70,7 +70,7 @@ class NettyClientChannelManager {
         poolConfig.lifo = clientConfig.isPoolLifo();
         return poolConfig;
     }
-    
+
     /**
      * Get all channels registered on current Rpc Client.
      *
@@ -79,7 +79,7 @@ class NettyClientChannelManager {
     ConcurrentMap<String, Channel> getChannels() {
         return channels;
     }
-    
+
     /**
      * Acquire netty client channel connected to remote server.
      *
@@ -102,15 +102,17 @@ class NettyClientChannelManager {
             return doConnect(serverAddress);
         }
     }
-    
+
     /**
      * Release channel to pool if necessary.
      *
-     * @param channel channel
+     * @param channel       channel
      * @param serverAddress server address
      */
     void releaseChannel(Channel channel, String serverAddress) {
-        if (null == channel || null == serverAddress) { return; }
+        if (null == channel || null == serverAddress) {
+            return;
+        }
         try {
             synchronized (channelLocks.get(serverAddress)) {
                 Channel ch = channels.get(serverAddress);
@@ -131,15 +133,17 @@ class NettyClientChannelManager {
             LOGGER.error(exx.getMessage());
         }
     }
-    
+
     /**
      * Destroy channel.
      *
      * @param serverAddress server address
-     * @param channel channel
+     * @param channel       channel
      */
     void destroyChannel(String serverAddress, Channel channel) {
-        if (null == channel) { return; }
+        if (null == channel) {
+            return;
+        }
         try {
             if (channel.equals(channels.get(serverAddress))) {
                 channels.remove(serverAddress);
@@ -149,7 +153,7 @@ class NettyClientChannelManager {
             LOGGER.error("return channel to rmPool error:" + exx.getMessage());
         }
     }
-    
+
     /**
      * Reconnect to remote server of current transaction service group.
      *
@@ -162,57 +166,63 @@ class NettyClientChannelManager {
         } catch (Exception exx) {
             LOGGER.error("Failed to get available servers: {}", exx.getMessage());
         }
+
         if (CollectionUtils.isEmpty(availList)) {
             LOGGER.error("no available server to connect.");
             return;
         }
+
         for (String serverAddress : availList) {
             try {
                 acquireChannel(serverAddress);
             } catch (Exception e) {
                 LOGGER.error(FrameworkErrorCode.NetConnect.getErrCode(),
-                    "can not connect to " + serverAddress + " cause:" + e.getMessage(), e);
+                        "can not connect to " + serverAddress + " cause:" + e.getMessage(), e);
             }
         }
     }
-    
+
     void invalidateObject(final String serverAddress, final Channel channel) throws Exception {
         nettyClientKeyPool.invalidateObject(poolKeyMap.get(serverAddress), channel);
     }
-    
+
     void registerChannel(final String serverAddress, final Channel channel) {
         if (null != channels.get(serverAddress) && channels.get(serverAddress).isActive()) {
             return;
         }
         channels.put(serverAddress, channel);
     }
-    
+
     private Channel doConnect(String serverAddress) {
         Channel channelToServer = channels.get(serverAddress);
         if (channelToServer != null && channelToServer.isActive()) {
             return channelToServer;
         }
+
         Channel channelFromPool;
         try {
             NettyPoolKey currentPoolKey = poolKeyFunction.apply(serverAddress);
             NettyPoolKey previousPoolKey = poolKeyMap.putIfAbsent(serverAddress, currentPoolKey);
+
             if (null != previousPoolKey && previousPoolKey.getMessage() instanceof RegisterRMRequest) {
                 RegisterRMRequest registerRMRequest = (RegisterRMRequest) currentPoolKey.getMessage();
                 ((RegisterRMRequest) previousPoolKey.getMessage()).setResourceIds(registerRMRequest.getResourceIds());
             }
+
             channelFromPool = nettyClientKeyPool.borrowObject(poolKeyMap.get(serverAddress));
             channels.put(serverAddress, channelFromPool);
         } catch (Exception exx) {
             LOGGER.error(FrameworkErrorCode.RegisterRM.getErrCode(), "register RM failed.", exx);
             throw new FrameworkException("can not register RM,err:" + exx.getMessage());
         }
+
         return channelFromPool;
     }
-    
+
     private List<String> getAvailServerList(String transactionServiceGroup) throws Exception {
         List<String> availList = new ArrayList<>();
-        List<InetSocketAddress> availInetSocketAddressList = RegistryFactory.getInstance().lookup(
-            transactionServiceGroup);
+        // 从注册中心获取服务列表
+        List<InetSocketAddress> availInetSocketAddressList = RegistryFactory.getInstance().lookup(transactionServiceGroup);
         if (!CollectionUtils.isEmpty(availInetSocketAddressList)) {
             for (InetSocketAddress address : availInetSocketAddressList) {
                 availList.add(NetUtil.toStringAddress(address));
@@ -220,7 +230,7 @@ class NettyClientChannelManager {
         }
         return availList;
     }
-    
+
     private Channel getExistAliveChannel(Channel rmChannel, String serverAddress) {
         if (rmChannel.isActive()) {
             return rmChannel;

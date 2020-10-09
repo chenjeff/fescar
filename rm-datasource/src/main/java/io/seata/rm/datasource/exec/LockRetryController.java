@@ -51,11 +51,13 @@ public class LockRetryController {
      * @throws LockWaitTimeoutException the lock wait timeout exception
      */
     public void sleep(Exception e) throws LockWaitTimeoutException {
+        // 30
         if (--lockRetryTimes < 0) {
             throw new LockWaitTimeoutException("Global lock wait timeout", e);
         }
 
         try {
+            // 10ms
             Thread.sleep(lockRetryInternal);
         } catch (InterruptedException ignore) {
         }

@@ -42,7 +42,7 @@ public class TransactionalTemplate {
      * @return the object
      * @throws TransactionalExecutor.ExecutionException the execution exception
      */
-    public Object execute(TransactionalExecutor business) throws Throwable {
+    public Object   execute(TransactionalExecutor business) throws Throwable {
         // 1. get or create a transaction
         GlobalTransaction tx = GlobalTransactionContext.getCurrentOrCreate();
 
@@ -54,6 +54,7 @@ public class TransactionalTemplate {
 
         try {
             // 2. begin transaction
+            // TM从TC获取到XID
             beginTransaction(txInfo, tx);
 
             Object rs;

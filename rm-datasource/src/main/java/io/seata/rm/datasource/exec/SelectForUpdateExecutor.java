@@ -115,6 +115,7 @@ public class SelectForUpdateExecutor<T, S extends Statement> extends BaseTransac
                     }
 
                     TableRecords selectPKRows = TableRecords.buildRecords(getTableMeta(), rsPK);
+                    // {table-name}:{pk_field},{pk_field},{pk_field},
                     String lockKeys = buildLockKey(selectPKRows);
                     if (StringUtils.isNullOrEmpty(lockKeys)) {
                         break;

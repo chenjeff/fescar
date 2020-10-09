@@ -64,7 +64,9 @@ public class TableMeta {
         if (col == null) {
             if (colName.charAt(0) == '`') {
                 col = allColumns.get(colName.substring(1, colName.length() - 1));
-            } else { col = allColumns.get("`" + colName + "`"); }
+            } else {
+                col = allColumns.get("`" + colName + "`");
+            }
         }
         return col;
     }
@@ -150,6 +152,7 @@ public class TableMeta {
     }
 
     /**
+     * 是否 包含所有主键列
      * Contains pk boolean.
      *
      * @param cols the cols

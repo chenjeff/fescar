@@ -45,10 +45,11 @@ public class TableMetaCache {
 
     private static final long CACHE_SIZE = 100000;
 
+    // 15min = 900s = 60s * 15
     private static final long EXPIRE_TIME = 900 * 1000;
 
     private static final Cache<String, TableMeta> TABLE_META_CACHE = Caffeine.newBuilder().maximumSize(CACHE_SIZE)
-        .expireAfterWrite(EXPIRE_TIME, TimeUnit.MILLISECONDS).softValues().build();
+            .expireAfterWrite(EXPIRE_TIME, TimeUnit.MILLISECONDS).softValues().build();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TableMetaCache.class);
 
@@ -87,6 +88,7 @@ public class TableMetaCache {
         if (tmeta == null) {
             throw new ShouldNeverHappenException(String.format("[xid:%s]get tablemeta failed", RootContext.getXID()));
         }
+
         return tmeta;
     }
 
@@ -94,8 +96,7 @@ public class TableMetaCache {
         return fetchSchemeInDefaultWay(dataSource, tableName);
     }
 
-    private static TableMeta fetchSchemeInDefaultWay(DataSource dataSource, String tableName)
-        throws SQLException {
+    private static TableMeta fetchSchemeInDefaultWay(DataSource dataSource, String tableName) throws SQLException {
         Connection conn = null;
         Statement stmt = null;
         ResultSet rs = null;
@@ -104,6 +105,7 @@ public class TableMetaCache {
             stmt = conn.createStatement();
             StringBuffer sb = new StringBuffer("SELECT * FROM " + tableName + " LIMIT 1");
             rs = stmt.executeQuery(sb.toString());
+
             ResultSetMetaData rsmd = rs.getMetaData();
             DatabaseMetaData dbmd = conn.getMetaData();
 
@@ -156,9 +158,9 @@ public class TableMetaCache {
         try {
             stmt = conn.getTargetConnection().createStatement();
             rs1 = stmt.executeQuery(
-                "select a.constraint_name,  a.column_name from user_cons_columns a, user_constraints b  where a"
-                    + ".constraint_name = b.constraint_name and b.constraint_type = 'P' and a.table_name ='"
-                    + tableName + "'");
+                    "select a.constraint_name,  a.column_name from user_cons_columns a, user_constraints b  where a"
+                            + ".constraint_name = b.constraint_name and b.constraint_type = 'P' and a.table_name ='"
+                            + tableName + "'");
             while (rs1.next()) {
                 String indexName = rs1.getString(1);
                 String colName = rs1.getString(2);
@@ -189,7 +191,7 @@ public class TableMetaCache {
     }
 
     private static TableMeta resultSetMetaToSchema(ResultSetMetaData rsmd, DatabaseMetaData dbmd, String tableName)
-        throws SQLException {
+            throws SQLException {
         String schemaName = rsmd.getSchemaName(1);
         String catalogName = rsmd.getCatalogName(1);
 
@@ -242,18 +244,19 @@ public class TableMetaCache {
                 index.setAscOrDesc(rs2.getString("ASC_OR_DESC"));
                 index.setCardinality(rs2.getInt("CARDINALITY"));
                 index.getValues().add(col);
-                if ("PRIMARY".equalsIgnoreCase(indexName) || indexName.equalsIgnoreCase(
-                    rsmd.getTableName(1) + "_pkey")) {
+
+                if ("PRIMARY".equalsIgnoreCase(indexName) || indexName.equalsIgnoreCase(rsmd.getTableName(1) + "_pkey")) {
                     index.setIndextype(IndexType.PRIMARY);
                 } else if (!index.isNonUnique()) {
                     index.setIndextype(IndexType.Unique);
                 } else {
                     index.setIndextype(IndexType.Normal);
                 }
-                tm.getAllIndexes().put(indexName, index);
 
+                tm.getAllIndexes().put(indexName, index);
             }
         }
+
         IndexMeta index = tm.getAllIndexes().get(indexName);
         if (index.getIndextype().value() != 0) {
             if ("H2 JDBC Driver".equals(dbmd.getDriverName())) {
@@ -266,6 +269,7 @@ public class TableMetaCache {
                 }
             }
         }
+
         return tm;
     }
 }

@@ -48,8 +48,10 @@ public class SQLVisitorFactory {
         if (asts == null || asts.size() != 1) {
             throw new UnsupportedOperationException("Unsupported SQL: " + sql);
         }
+
         SQLRecognizer recognizer = null;
         SQLStatement ast = asts.get(0);
+
         if (JdbcConstants.MYSQL.equalsIgnoreCase(dbType)) {
             if (ast instanceof SQLInsertStatement) {
                 recognizer = new MySQLInsertRecognizer(sql, ast);
@@ -65,6 +67,7 @@ public class SQLVisitorFactory {
         } else {
             throw new UnsupportedOperationException("Just support MySQL by now!");
         }
+
         return recognizer;
     }
 }

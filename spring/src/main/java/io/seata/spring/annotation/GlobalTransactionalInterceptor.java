@@ -100,8 +100,7 @@ public class GlobalTransactionalInterceptor implements MethodInterceptor {
         });
     }
 
-    private Object handleGlobalTransaction(final MethodInvocation methodInvocation,
-                                           final GlobalTransactional globalTrxAnno) throws Throwable {
+    private Object handleGlobalTransaction(final MethodInvocation methodInvocation, final GlobalTransactional globalTrxAnno) throws Throwable {
         try {
             return transactionalTemplate.execute(new TransactionalExecutor() {
 
@@ -127,6 +126,7 @@ public class GlobalTransactionalInterceptor implements MethodInterceptor {
                     transactionInfo.setName(name());
 
                     Set<RollbackRule> rollbackRules = new LinkedHashSet<>();
+
                     for (Class<?> rbRule : globalTrxAnno.rollbackFor()) {
                         rollbackRules.add(new RollbackRule(rbRule));
                     }

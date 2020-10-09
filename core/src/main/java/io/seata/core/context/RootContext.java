@@ -70,6 +70,7 @@ public class RootContext {
         }
 
         //just put something not null
+        // KEY_GLOBAL_LOCK_FLAG = "TX_LOCK"
         CONTEXT_HOLDER.put(KEY_GLOBAL_LOCK_FLAG, KEY_GLOBAL_LOCK_FLAG);
     }
 

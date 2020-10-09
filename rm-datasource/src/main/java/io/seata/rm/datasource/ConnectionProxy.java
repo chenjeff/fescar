@@ -99,6 +99,7 @@ public class ConnectionProxy extends AbstractConnectionProxy {
     public void checkLock(String lockKeys) throws SQLException {
         // Just check lock without requiring lock by now.
         try {
+            // 服务端检查，锁定行冲突
             boolean lockable = DefaultResourceManager.get().lockQuery(BranchType.AT, getDataSourceProxy().getResourceId(), context.getXid(), lockKeys);
             if (!lockable) {
                 throw new LockConflictException();
@@ -162,7 +163,6 @@ public class ConnectionProxy extends AbstractConnectionProxy {
     }
 
     private void processLocalCommitWithGlobalLocks() throws SQLException {
-
         checkLock(context.buildLockKeys());
         try {
             targetConnection.commit();
@@ -174,6 +174,7 @@ public class ConnectionProxy extends AbstractConnectionProxy {
 
     private void processGlobalTransactionCommit() throws SQLException {
         try {
+            // branchRegister
             register();
         } catch (TransactionException e) {
             recognizeLockKeyConflictException(e);
@@ -185,16 +186,19 @@ public class ConnectionProxy extends AbstractConnectionProxy {
             }
             targetConnection.commit();
         } catch (Throwable ex) {
+            // report BranchStatus.PhaseOne_Failed
             report(false);
             if (ex instanceof SQLException) {
                 throw new SQLException(ex);
             }
         }
+        // report BranchStatus.PhaseOne_Done
         report(true);
         context.reset();
     }
 
     private void register() throws TransactionException {
+        // buildLockKeys 构建锁定行key 冲突(服务端会进行锁定行冲突检查)会从server抛出异常，当前分支事务失败
         Long branchId = DefaultResourceManager.get().branchRegister(BranchType.AT, getDataSourceProxy().getResourceId(),
                 null, context.getXid(), null, context.buildLockKeys());
         context.setBranchId(branchId);
@@ -205,6 +209,7 @@ public class ConnectionProxy extends AbstractConnectionProxy {
         targetConnection.rollback();
         if (context.inGlobalTransaction()) {
             if (context.isBranchRegistered()) {
+                // report BranchStatus.PhaseOne_Failed
                 report(false);
             }
         }
@@ -224,6 +229,7 @@ public class ConnectionProxy extends AbstractConnectionProxy {
         int retry = REPORT_RETRY_COUNT;
         while (retry > 0) {
             try {
+                // 报告分支事务状态
                 DefaultResourceManager.get().branchReport(BranchType.AT, context.getXid(), context.getBranchId(),
                         (commitDone ? BranchStatus.PhaseOne_Done : BranchStatus.PhaseOne_Failed), null);
                 return;
@@ -238,4 +244,5 @@ public class ConnectionProxy extends AbstractConnectionProxy {
             }
         }
     }
+
 }

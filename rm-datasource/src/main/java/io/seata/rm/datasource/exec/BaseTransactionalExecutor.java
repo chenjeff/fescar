@@ -154,10 +154,9 @@ public abstract class BaseTransactionalExecutor<T, S extends Statement> implemen
      */
     protected TableMeta getTableMeta(String tableName) {
         if (tableMeta == null) {
+            tableMeta = TableMetaCache.getTableMeta(statementProxy.getConnectionProxy().getDataSourceProxy(), tableName);
+        }
 
-
-        tableMeta = TableMetaCache.getTableMeta(statementProxy.getConnectionProxy().getDataSourceProxy(), tableName);
-}
         return tableMeta;
     }
 
@@ -176,6 +175,7 @@ public abstract class BaseTransactionalExecutor<T, S extends Statement> implemen
         ConnectionProxy connectionProxy = statementProxy.getConnectionProxy();
 
         TableRecords lockKeyRecords = sqlRecognizer.getSQLType() == SQLType.DELETE ? beforeImage : afterImage;
+        // 构建锁定行key(相当于一个外部实现的行锁) {table-name}:{field},{field},{field},
         String lockKeys = buildLockKey(lockKeyRecords);
         connectionProxy.appendLockKey(lockKeys);
 

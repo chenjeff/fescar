@@ -60,9 +60,7 @@ public final class TmRpcClient extends AbstractRpcRemotingClient {
      */
     public static boolean enableDegrade = false;
 
-    private TmRpcClient(NettyClientConfig nettyClientConfig,
-                        EventExecutorGroup eventExecutorGroup,
-                        ThreadPoolExecutor messageExecutor) {
+    private TmRpcClient(NettyClientConfig nettyClientConfig, EventExecutorGroup eventExecutorGroup, ThreadPoolExecutor messageExecutor) {
         super(nettyClientConfig, eventExecutorGroup, messageExecutor, NettyPoolKey.TransactionRole.TMROLE);
     }
 
@@ -92,6 +90,7 @@ public final class TmRpcClient extends AbstractRpcRemotingClient {
             synchronized (TmRpcClient.class) {
                 if (null == instance) {
                     NettyClientConfig nettyClientConfig = new NettyClientConfig();
+
                     final ThreadPoolExecutor messageExecutor = new ThreadPoolExecutor(
                             nettyClientConfig.getClientWorkerThreads(), nettyClientConfig.getClientWorkerThreads(),
                             KEEP_ALIVE_TIME, TimeUnit.SECONDS,
@@ -99,6 +98,7 @@ public final class TmRpcClient extends AbstractRpcRemotingClient {
                             new NamedThreadFactory(nettyClientConfig.getTmDispatchThreadPrefix(),
                                     nettyClientConfig.getClientWorkerThreads()),
                             RejectedPolicies.runsOldestTaskPolicy());
+
                     instance = new TmRpcClient(nettyClientConfig, null, messageExecutor);
                 }
             }

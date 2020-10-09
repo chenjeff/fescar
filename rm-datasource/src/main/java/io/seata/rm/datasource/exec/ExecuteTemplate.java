@@ -70,12 +70,12 @@ public class ExecuteTemplate {
         }
 
         if (sqlRecognizer == null) {
-            sqlRecognizer = SQLVisitorFactory.get(
-                    statementProxy.getTargetSQL(),
-                    statementProxy.getConnectionProxy().getDbType());
+            sqlRecognizer = SQLVisitorFactory.get(statementProxy.getTargetSQL(), statementProxy.getConnectionProxy().getDbType());
         }
+
         Executor<T> executor = null;
         if (sqlRecognizer == null) {
+            // 普通查询
             executor = new PlainExecutor<T, S>(statementProxy, statementCallback);
         } else {
             switch (sqlRecognizer.getSQLType()) {
@@ -96,16 +96,19 @@ public class ExecuteTemplate {
                     break;
             }
         }
+
         T rs = null;
         try {
+            // 执行SQL 构建数据前(后)画像
             rs = executor.execute(args);
         } catch (Throwable ex) {
             if (!(ex instanceof SQLException)) {
                 // Turn other exception into SQLException
                 ex = new SQLException(ex);
             }
-            throw (SQLException)ex;
+            throw (SQLException) ex;
         }
+
         return rs;
     }
 }

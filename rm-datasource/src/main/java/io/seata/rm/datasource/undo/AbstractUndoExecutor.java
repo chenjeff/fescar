@@ -212,6 +212,7 @@ public abstract class AbstractUndoExecutor {
                 throw new SQLException("Has dirty records when undo.");
             }
         }
+
         return true;
     }
 
@@ -265,6 +266,7 @@ public abstract class AbstractUndoExecutor {
                 }
             }
         }
+
         return currentRecords;
     }
 

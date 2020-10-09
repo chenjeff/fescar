@@ -104,10 +104,9 @@ public class DefaultServerMessageListenerImpl implements ServerMessageListener {
     @Override
     public void onRegRmMessage(RpcMessage request,
                                ChannelHandlerContext ctx,
-
                                ServerMessageSender sender,
                                RegisterCheckAuthHandler checkAuthHandler) {
-RegisterRMRequest message = (RegisterRMRequest) request.getBody();
+        RegisterRMRequest message = (RegisterRMRequest) request.getBody();
         boolean isSuccess = false;
         try {
             if (null == checkAuthHandler || checkAuthHandler.regResourceManagerCheckAuth(message)) {

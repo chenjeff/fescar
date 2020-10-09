@@ -30,10 +30,13 @@ import io.seata.rm.datasource.undo.SQLUndoLog;
  * @author sharajava
  */
 public class ConnectionContext {
+
     private String xid;
     private Long branchId;
     private boolean isGlobalLockRequire;
-    //table and primary key should not be duplicated
+    /**
+     * table and primary key should not be duplicated
+     */
     private Set<String> lockKeysBuffer = new HashSet<>();
     private List<SQLUndoLog> sqlUndoItemsBuffer = new ArrayList<>();
 
@@ -100,6 +103,7 @@ public class ConnectionContext {
         if (xid == null) {
             throw new IllegalArgumentException("xid should not be null");
         }
+
         if (!inGlobalTransaction()) {
             setXid(xid);
         } else {
@@ -158,7 +162,7 @@ public class ConnectionContext {
     /**
      * Reset.
      */
-    void reset(){
+    void reset() {
         this.reset(null);
     }
 
@@ -184,6 +188,7 @@ public class ConnectionContext {
         if (lockKeysBuffer.isEmpty()) {
             return null;
         }
+
         StringBuilder appender = new StringBuilder();
         Iterator<String> iterable = lockKeysBuffer.iterator();
         while (iterable.hasNext()) {
@@ -192,6 +197,7 @@ public class ConnectionContext {
                 appender.append(";");
             }
         }
+
         return appender.toString();
     }
 
@@ -207,7 +213,7 @@ public class ConnectionContext {
     @Override
     public String toString() {
         return "ConnectionContext [xid=" + xid + ", branchId=" + branchId + ", lockKeysBuffer=" + lockKeysBuffer
-            + ", sqlUndoItemsBuffer=" + sqlUndoItemsBuffer + "]";
+                + ", sqlUndoItemsBuffer=" + sqlUndoItemsBuffer + "]";
     }
 
 }

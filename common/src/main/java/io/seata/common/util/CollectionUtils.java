@@ -146,24 +146,30 @@ public class CollectionUtils {
         if (data == null) {
             return null;
         }
+
         Map<String, String> map = new ConcurrentHashMap<>();
         if (StringUtils.isBlank(data)) {
             return map;
         }
+
+        // PAIR_SPLIT = '&'
         String[] kvPairs = data.split(PAIR_SPLIT);
         if (kvPairs.length == 0) {
             return map;
         }
+
         for (String kvPair : kvPairs) {
             if (StringUtils.isNullOrEmpty(kvPair)) {
                 continue;
             }
+            // KV_SPLIT = '='
             String[] kvs = kvPair.split(KV_SPLIT);
             if (kvs.length != 2) {
                 continue;
             }
             map.put(kvs[0], kvs[1]);
         }
+
         return map;
     }
 
@@ -174,7 +180,9 @@ public class CollectionUtils {
      * @return the list
      */
     public static List<String> toUpperList(List<String> sourceList) {
-        if (null == sourceList || sourceList.size() == 0) { return sourceList; }
+        if (null == sourceList || sourceList.size() == 0) {
+            return sourceList;
+        }
         List<String> destList = new ArrayList<>(sourceList.size());
         for (String element : sourceList) {
             if (null != element) {

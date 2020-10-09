@@ -80,8 +80,7 @@ public class GlobalTransactionScanner extends AbstractAutoProxyCreator implement
     /**
      * default: false
      */
-    private final boolean disableGlobalTransaction =
-            ConfigurationFactory.getInstance().getBoolean("service.disableGlobalTransaction", false);
+    private final boolean disableGlobalTransaction = ConfigurationFactory.getInstance().getBoolean("service.disableGlobalTransaction", false);
 
     private final FailureHandler failureHandlerHook;
 
@@ -169,13 +168,13 @@ public class GlobalTransactionScanner extends AbstractAutoProxyCreator implement
             throw new IllegalArgumentException("applicationId: " + applicationId + ", txServiceGroup: " + txServiceGroup);
         }
 
-        //init TM
+        // init TM
         TMClient.init(applicationId, txServiceGroup);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Transaction Manager Client is initialized. applicationId[" + applicationId + "] txServiceGroup[" + txServiceGroup + "]");
         }
 
-        //init RM
+        // init RM
         RMClient.init(applicationId, txServiceGroup);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Resource Manager is initialized. applicationId[" + applicationId + "] txServiceGroup[" + txServiceGroup + "]");
@@ -219,10 +218,13 @@ public class GlobalTransactionScanner extends AbstractAutoProxyCreator implement
                     Class<?> serviceInterface = SpringProxyUtils.findTargetClass(bean);
                     Class<?>[] interfacesIfJdk = SpringProxyUtils.findInterfaces(bean);
 
+                    // GlobalTransactional
+                    // GlobalLock
                     if (!existsAnnotation(new Class[]{serviceInterface}) && !existsAnnotation(interfacesIfJdk)) {
                         return bean;
                     }
 
+                    // AT
                     if (interceptor == null) {
                         interceptor = new GlobalTransactionalInterceptor(failureHandlerHook);
                     }

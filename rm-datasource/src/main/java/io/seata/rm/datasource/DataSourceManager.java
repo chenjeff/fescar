@@ -144,6 +144,7 @@ public class DataSourceManager extends AbstractResourceManager implements Initia
     @Override
     public void registerResource(Resource resource) {
         DataSourceProxy dataSourceProxy = (DataSourceProxy) resource;
+        // resourceId = jdbc:mysql://127.0.0.1/fescar_demo
         dataSourceCache.put(dataSourceProxy.getResourceId(), dataSourceProxy);
         super.registerResource(dataSourceProxy);
     }
@@ -178,7 +179,7 @@ public class DataSourceManager extends AbstractResourceManager implements Initia
         try {
             UndoLogManager.undo(dataSourceProxy, xid, branchId);
         } catch (TransactionException te) {
-            if (LOGGER.isInfoEnabled()){
+            if (LOGGER.isInfoEnabled()) {
                 LOGGER.info("branchRollback failed reason [{}]", te.getMessage());
             }
             if (te.getCode() == TransactionExceptionCode.BranchRollbackFailed_Unretriable) {

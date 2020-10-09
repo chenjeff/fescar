@@ -96,10 +96,10 @@ public class SessionHolder {
             ROOT_SESSION_MANAGER = EnhancedServiceLoader.load(SessionManager.class, StoreMode.DB.name());
             // async.commit.data
             ASYNC_COMMITTING_SESSION_MANAGER = EnhancedServiceLoader.load(SessionManager.class, StoreMode.DB.name(),
-                new Object[] {ASYNC_COMMITTING_SESSION_MANAGER_NAME});
+                    new Object[]{ASYNC_COMMITTING_SESSION_MANAGER_NAME});
 
             RETRY_COMMITTING_SESSION_MANAGER = EnhancedServiceLoader.load(SessionManager.class, StoreMode.DB.name(),
-                new Object[] {RETRY_COMMITTING_SESSION_MANAGER_NAME});
+                    new Object[]{RETRY_COMMITTING_SESSION_MANAGER_NAME});
 
             RETRY_ROLLBACKING_SESSION_MANAGER = EnhancedServiceLoader.load(SessionManager.class, StoreMode.DB.name(),
                     new Object[]{RETRY_ROLLBACKING_SESSION_MANAGER_NAME});

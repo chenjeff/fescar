@@ -29,10 +29,9 @@ import org.slf4j.LoggerFactory;
 /**
  * The type Abstract dml base executor.
  *
- * @author sharajava
- *
  * @param <T> the type parameter
  * @param <S> the type parameter
+ * @author sharajava
  */
 public abstract class AbstractDMLBaseExecutor<T, S extends Statement> extends BaseTransactionalExecutor<T, S> {
 
@@ -45,8 +44,7 @@ public abstract class AbstractDMLBaseExecutor<T, S extends Statement> extends Ba
      * @param statementCallback the statement callback
      * @param sqlRecognizer     the sql recognizer
      */
-    public AbstractDMLBaseExecutor(StatementProxy<S> statementProxy, StatementCallback<T, S> statementCallback,
-                                   SQLRecognizer sqlRecognizer) {
+    public AbstractDMLBaseExecutor(StatementProxy<S> statementProxy, StatementCallback<T, S> statementCallback, SQLRecognizer sqlRecognizer) {
         super(statementProxy, statementCallback, sqlRecognizer);
     }
 
@@ -71,7 +69,9 @@ public abstract class AbstractDMLBaseExecutor<T, S extends Statement> extends Ba
         TableRecords beforeImage = beforeImage();
         T result = statementCallback.execute(statementProxy.getTargetStatement(), args);
         TableRecords afterImage = afterImage(beforeImage);
+
         prepareUndoLog(beforeImage, afterImage);
+
         return result;
     }
 
@@ -98,7 +98,6 @@ public abstract class AbstractDMLBaseExecutor<T, S extends Statement> extends Ba
                     lockRetryController.sleep(lockConflict);
                 }
             }
-
         } catch (Exception e) {
             // when exception occur in finally,this exception will lost, so just print it here
             LOGGER.error("exception occur", e);
@@ -106,6 +105,7 @@ public abstract class AbstractDMLBaseExecutor<T, S extends Statement> extends Ba
         } finally {
             connectionProxy.setAutoCommit(true);
         }
+
         return result;
     }
 

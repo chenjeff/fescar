@@ -63,12 +63,14 @@ public class DataSourceProxy extends AbstractDataSourceProxy implements Resource
 
     private void init(DataSource dataSource, String resourceGroupId) {
         this.resourceGroupId = resourceGroupId;
+
         try (Connection connection = dataSource.getConnection()) {
             jdbcUrl = connection.getMetaData().getURL();
             dbType = JdbcUtils.getDbType(jdbcUrl, null);
         } catch (SQLException e) {
             throw new IllegalStateException("can not init dataSource", e);
         }
+
         DefaultResourceManager.get().registerResource(this);
     }
 
@@ -108,6 +110,7 @@ public class DataSourceProxy extends AbstractDataSourceProxy implements Resource
         return resourceGroupId;
     }
 
+    // jdbc:mysql://127.0.0.1/fescar_demo
     @Override
     public String getResourceId() {
         if (jdbcUrl.contains("?")) {

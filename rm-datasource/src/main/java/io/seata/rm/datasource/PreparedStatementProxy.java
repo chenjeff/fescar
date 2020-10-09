@@ -29,7 +29,7 @@ import io.seata.rm.datasource.exec.StatementCallback;
  * @author sharajava
  */
 public class PreparedStatementProxy extends AbstractPreparedStatementProxy
-    implements PreparedStatement, ParametersHolder {
+        implements PreparedStatement, ParametersHolder {
 
     @Override
     public ArrayList<Object>[] getParameters() {

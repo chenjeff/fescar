@@ -38,6 +38,7 @@ public class UndoLogParserFactory {
     }
 
     /**
+     * default: jackson
      * Gets default UndoLogParser instance.
      *
      * @return the instance

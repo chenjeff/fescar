@@ -361,7 +361,7 @@ public class NettyClientConfig extends NettyBaseConfig {
      */
     public String getClientSelectorThreadPrefix() {
         return CONFIG.getConfig("transport.thread-factory.client-selector-thread-prefix",
-            DEFAULT_SELECTOR_THREAD_PREFIX);
+                DEFAULT_SELECTOR_THREAD_PREFIX);
     }
 
     /**

@@ -73,7 +73,9 @@ public abstract class AbstractRpcRemoting extends ChannelDuplexHandler implement
      */
     protected final ThreadPoolExecutor messageExecutor;
 
-    /** Id generator of this remoting */
+    /**
+     * Id generator of this remoting
+     */
     protected final PositiveAtomicCounter idGenerator = new PositiveAtomicCounter();
 
     /**
@@ -152,6 +154,7 @@ public abstract class AbstractRpcRemoting extends ChannelDuplexHandler implement
                         timeoutMessageFutures.add(future);
                     }
                 }
+
                 for (MessageFuture messageFuture : timeoutMessageFutures) {
                     futures.remove(messageFuture.getRequestMessage().getId());
                     messageFuture.setResultMessage(null);
@@ -334,7 +337,7 @@ public abstract class AbstractRpcRemoting extends ChannelDuplexHandler implement
     /**
      * Send response.
      *
-     * @param request  the msg id
+     * @param request the msg id
      * @param channel the channel
      * @param msg     the msg
      */
